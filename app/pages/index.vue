@@ -1,15 +1,5 @@
 <script setup lang="ts">
-interface Provider {
-  id: string
-  name: string
-  apiKey: string
-  baseUrl: string
-  model?: string
-  isCurrent: boolean
-  createdAt: number
-  type: 'claude' | 'codex' | 'gemini' | 'opencode'
-  icon: string
-}
+import type { Provider } from '@/types'
 
 const router = useRouter()
 const providers = ref<Provider[]>([])
@@ -54,7 +44,7 @@ async function refresh() {
 }
 
 function startEdit(p: Provider) {
-  router.push(`/providers/edit/${p.id}`)
+  router.push(`/providers/${p.id}`)
 }
 
 async function handleDelete(id: string) {
@@ -135,6 +125,14 @@ onMounted(refresh)
                 color="gray"
                 variant="ghost"
                 size="sm"
+                icon="i-heroicons-adjustments-horizontal"
+                to="/general-configs"
+                title="通用配置模板"
+              />
+              <UButton
+                color="gray"
+                variant="ghost"
+                size="sm"
                 icon="i-heroicons-wrench"
               />
               <UButton
@@ -194,13 +192,18 @@ onMounted(refresh)
                     : 'border-gray-300 bg-gray-100 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300',
                 ]"
               >
-                {{ p.icon }}
+                {{ p.icon || p.name.charAt(0).toUpperCase() }}
               </div>
 
               <!-- 内容 -->
               <div class="min-w-0 flex-1">
-                <div class="text-base font-semibold text-gray-900 dark:text-white">{{ p.name }}</div>
-                <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ p.baseUrl }}</div>
+                <div class="flex items-center gap-2">
+                  <div class="text-base font-semibold text-gray-900 dark:text-white">{{ p.name }}</div>
+                  <UBadge v-if="p.notes" color="gray" variant="soft" size="sm" class="font-normal">
+                    {{ p.notes }}
+                  </UBadge>
+                </div>
+                <div class="mt-1 text-sm text-gray-500 dark:text-gray-400 truncate">{{ p.baseUrl }}</div>
               </div>
 
               <!-- 操作按钮（悬停/选中时显示） -->
