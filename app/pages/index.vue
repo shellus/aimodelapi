@@ -106,6 +106,16 @@ async function handleSwitch(id: string) {
   }
 }
 
+async function handleDuplicate(id: string) {
+  try {
+    const newProvider = await $fetch<Provider>(`/api/providers/${id}/duplicate`, { method: 'POST' })
+    toast.add({ title: '复制成功', color: 'success' })
+    router.push(`/providers/${newProvider.id}`)
+  } catch (error) {
+    toast.add({ title: '复制失败', description: String(error), color: 'error' })
+  }
+}
+
 // 拖动排序处理
 async function handleDragEnd() {
   const updates = filteredProviders.value.map((p, index) => ({
@@ -299,6 +309,14 @@ onMounted(refresh)
                     icon="i-heroicons-pencil"
                     title="编辑"
                     @click="startEdit(p)"
+                  />
+                  <UButton
+                    color="gray"
+                    variant="ghost"
+                    size="xs"
+                    icon="i-heroicons-document-duplicate"
+                    title="复制"
+                    @click="handleDuplicate(p.id)"
                   />
                   <UButton
                     color="red"
