@@ -87,9 +87,11 @@ function generateProviderEnv() {
     ANTHROPIC_AUTH_TOKEN: form.apiKey,
     ANTHROPIC_BASE_URL: form.baseUrl,
   }
-  if (form.modelConfig.model) {
-    env.ANTHROPIC_MODEL = form.modelConfig.model
-  }
+  if (form.modelConfig.model) env.ANTHROPIC_MODEL = form.modelConfig.model
+  if (form.modelConfig.thinkingModel) env.ANTHROPIC_REASONING_MODEL = form.modelConfig.thinkingModel
+  if (form.modelConfig.haikuModel) env.ANTHROPIC_DEFAULT_HAIKU_MODEL = form.modelConfig.haikuModel
+  if (form.modelConfig.sonnetModel) env.ANTHROPIC_DEFAULT_SONNET_MODEL = form.modelConfig.sonnetModel
+  if (form.modelConfig.opusModel) env.ANTHROPIC_DEFAULT_OPUS_MODEL = form.modelConfig.opusModel
   return env
 }
 

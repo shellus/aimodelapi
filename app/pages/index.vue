@@ -286,6 +286,17 @@ onMounted(refresh)
                     启用
                   </UButton>
                   <UButton
+                    v-else
+                    color="neutral"
+                    variant="soft"
+                    size="xs"
+                    icon="i-heroicons-arrow-path"
+                    :loading="loading"
+                    @click="handleSwitch(p.id)"
+                  >
+                    写入
+                  </UButton>
+                  <UButton
                     color="gray"
                     variant="ghost"
                     size="xs"

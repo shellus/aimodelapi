@@ -22,7 +22,15 @@ async function writeClaudeSettings(settings: ClaudeSettings) {
   await rename(tmp, CLAUDE_SETTINGS_FILE)
 }
 
-const ENV_KEYS = ['ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_MODEL'] as const
+const ENV_KEYS = [
+  'ANTHROPIC_AUTH_TOKEN',
+  'ANTHROPIC_BASE_URL',
+  'ANTHROPIC_MODEL',
+  'ANTHROPIC_REASONING_MODEL',
+  'ANTHROPIC_DEFAULT_HAIKU_MODEL',
+  'ANTHROPIC_DEFAULT_SONNET_MODEL',
+  'ANTHROPIC_DEFAULT_OPUS_MODEL',
+] as const
 
 export async function writeClaudeEnv(env: Record<string, string>) {
   const settings = await readClaudeSettings()

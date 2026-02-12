@@ -124,9 +124,11 @@ export async function switchProvider(id: string): Promise<Provider | null> {
     ANTHROPIC_AUTH_TOKEN: target.apiKey,
     ANTHROPIC_BASE_URL: target.baseUrl,
   }
-  if (target.modelConfig?.model) {
-    env.ANTHROPIC_MODEL = target.modelConfig.model
-  }
+  if (target.modelConfig?.model) env.ANTHROPIC_MODEL = target.modelConfig.model
+  if (target.modelConfig?.thinkingModel) env.ANTHROPIC_REASONING_MODEL = target.modelConfig.thinkingModel
+  if (target.modelConfig?.haikuModel) env.ANTHROPIC_DEFAULT_HAIKU_MODEL = target.modelConfig.haikuModel
+  if (target.modelConfig?.sonnetModel) env.ANTHROPIC_DEFAULT_SONNET_MODEL = target.modelConfig.sonnetModel
+  if (target.modelConfig?.opusModel) env.ANTHROPIC_DEFAULT_OPUS_MODEL = target.modelConfig.opusModel
   await writeClaudeEnv(env)
 
   return target
