@@ -8,6 +8,7 @@ const providerUpdateSchema = z.object({
   websiteUrl: z.string().url().optional().or(z.literal('')),
   notes: z.string().optional(),
   generalConfigId: z.string().optional(),
+  configOverrides: z.record(z.string(), z.any()).optional(),
   modelConfig: z.object({
     model: z.string().optional(),
     thinkingModel: z.string().optional(),

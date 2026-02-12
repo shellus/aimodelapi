@@ -1,11 +1,5 @@
 import { z } from 'zod'
-import { readProviders } from '../../utils/providers'
-import { readFile, writeFile, rename } from 'node:fs/promises'
-import { join } from 'node:path'
-import { homedir } from 'node:os'
-
-const PROVIDERS_DIR = join(homedir(), '.cc-switch-web')
-const PROVIDERS_FILE = join(PROVIDERS_DIR, 'providers.json')
+import { readProviders, writeProviders } from '../../utils/providers'
 
 const SortUpdateSchema = z.array(
   z.object({
@@ -31,10 +25,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 原子化写入
-  const tmp = PROVIDERS_FILE + '.tmp'
-  await writeFile(tmp, JSON.stringify(providers, null, 2), 'utf-8')
-  await rename(tmp, PROVIDERS_FILE)
+  // 写入（复用 providers.ts 的原子化写入）
+  await writeProviders(providers)
 
   return { success: true }
 })

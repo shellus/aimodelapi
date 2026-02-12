@@ -1,4 +1,4 @@
-# CC-Switch-Web 开发规范
+# AIModelAPI 开发规范
 
 ## 🚨 开发铁律（必读！）
 
@@ -142,7 +142,36 @@
 - `USlideover` - 必须使用 `v-model:open`
 - `UContextMenu` - 必须使用 `v-model:open`
 
-#### 4. 必需的配置
+#### 4. USelect 不支持空字符串作为 value
+
+Nuxt UI v4 的 USelect 基于 Reka UI（Radix），**底层不支持空字符串 `''` 作为选项的 `value`**。
+
+**错误示例：**
+```typescript
+// 试图添加"无"选项让用户清除选择
+const options = [
+  { label: '无', value: '' },  // ❌ 不生效，选不中
+  ...items
+]
+```
+
+**正确做法：在 USelect 旁边添加清除按钮**
+```vue
+<div class="flex items-center gap-2">
+  <USelect v-model="form.fieldId" :items="options" class="w-full" />
+  <UButton
+    v-if="form.fieldId"
+    color="neutral"
+    variant="ghost"
+    icon="i-heroicons-x-mark"
+    @click="form.fieldId = ''"
+  />
+</div>
+```
+
+**症状**：添加空值选项后，下拉列表中该选项无法被选中，或选中后 v-model 值不变。
+
+#### 5. 必需的配置
 
 在 `nuxt.config.ts` 中：
 ```typescript
@@ -254,9 +283,13 @@ export default defineNuxtConfig({
 - 确保 `zod` 已正确安装并包含在 `package.json` 中，否则热更新可能导致后端 500 错误。
 
 #### 4. 配置合并与联动规范
-- **ENV 保护策略**：应用通用配置模板（如插件、权限）时，必须先备份当前的 `env` 字段，并在合并后强制写回。这是确保 Provider 切换管理不失效的铁律。
-- **联动切换逻辑**：在执行 `switchProvider` 时，应优先检查目标 Provider 是否关联了 `generalConfigId`。若关联，必须先应用该模板内容，再写入 Provider 自身的 Key 和 URL。
-- **深合并算法**：配置合并应使用递归的 `deepMerge`，而非简单的 `Object.assign`，以支持嵌套结构的增量更新。
+
+架构详情见 [三层配置架构](./docs/features/general-configs.md#三层配置架构)。以下是开发时必须遵守的规则：
+
+- **ENV 保护策略**：`applyGeneralConfigContent` 在写入前备份当前 `env` 字段，合并后强制还原。任何修改合并逻辑的代码都必须保留此机制。
+- **合并顺序不可变**：先 `deepMerge(L2, L3)` 写入非 env 配置，再 `writeClaudeEnv(L1)` 写入环境变量。颠倒顺序会导致 env 被覆盖。
+- **增量 diff 而非完整 JSON**：前端保存时必须通过 `extractDiff(base, edited)` 计算差异存为 `configOverrides`，禁止直接存储编辑器的完整 JSON。
+- **路径禁止硬编码**：数据文件路径常量统一定义在 `server/utils/providers.ts` 和 `server/utils/general-configs.ts` 中，API 路由层必须通过导入工具函数操作。
 
 ### 交互规范
 

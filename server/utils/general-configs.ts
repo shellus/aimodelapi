@@ -5,7 +5,7 @@ import { homedir } from 'node:os'
 import { randomUUID } from 'node:crypto'
 import type { GeneralConfig } from '../../types'
 
-const CONFIG_DIR = join(homedir(), '.cc-switch-web')
+const CONFIG_DIR = join(homedir(), '.aimodelapi')
 const CONFIG_FILE = join(CONFIG_DIR, 'general-configs.json')
 
 /**

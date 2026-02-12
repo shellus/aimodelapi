@@ -1,7 +1,7 @@
 # Provider 供应商管理
 
 > [!info]
-> 本功能允许用户在 UI 界面中集中管理多个 AI 供应商（如 Claude 官方、CodeX、Gemini 等），并一键切换 Claude Code 的环境变量配置。
+> 本功能允许用户在 UI 界面中集中管理多个 AI 供应商（如 Claude 官方、CodeX、Gemini 等），并一键切换 Claude Code 的配置。
 
 ## 核心功能
 
@@ -18,16 +18,16 @@
 - **推理模型 (Thinking)**: 复杂任务优先使用的模型。
 - **Haiku/Sonnet/Opus**: 分级别指定默认映射模型。
 
-### 3. 环境一键切换
-点击“启用”后，系统会自动修改 `~/.claude/settings.json`，更新以下环境变量：
-- `ANTHROPIC_AUTH_TOKEN`
-- `ANTHROPIC_BASE_URL`
-- `ANTHROPIC_MODEL` (优先从供应商的“主模型”配置中读取)
+### 3. 配置一键切换
+点击"启用"后，系统通过[三层配置合并架构](./general-configs.md#三层配置架构)将 Provider 的环境变量、关联模板和用户覆写合并写入 `~/.claude/settings.json`。
+
+### 4. 通用配置关联
+每个 Provider 可关联一个[通用配置模板](./general-configs.md)，切换时自动应用权限、插件等高级设置。用户还可在编辑页的"最终配置预览"中做个性化修改，系统会以增量 diff 形式保留。
 
 ## 页面布局
 - **列表页 (`/`)**: 采用卡片式布局，展示供应商状态、名称、Base URL 及备注。
-- **编辑页 (`/providers/[id]`)**: 动态表单，支持实时验证。
+- **编辑页 (`/providers/[id]`)**: 动态表单，支持实时验证和最终配置预览编辑。
 
 ## 使用技巧
 > [!tip]
-> 如果您在使用第三方中转，建议在“主模型”中填入 `claude-3-7-sonnet-20250219` 或类似名称，以确保切换后 Claude Code 能够直接识别。
+> 如果您在使用第三方中转，建议在"主模型"中填入 `claude-3-7-sonnet-20250219` 或类似名称，以确保切换后 Claude Code 能够直接识别。

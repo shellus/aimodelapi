@@ -42,7 +42,7 @@ export async function writeClaudeEnv(env: Record<string, string>) {
 /**
  * 简单的深合并函数
  */
-function deepMerge(target: any, source: any) {
+export function deepMerge(target: any, source: any) {
   if (!source || typeof source !== 'object') return target
   if (!target || typeof target !== 'object') return source
 
@@ -113,4 +113,33 @@ export async function getClaudeEnvStatus(): Promise<Record<string, string | unde
     ANTHROPIC_BASE_URL: env.ANTHROPIC_BASE_URL,
     ANTHROPIC_MODEL: env.ANTHROPIC_MODEL,
   }
+}
+
+/**
+ * 提取两个对象之间的增量差异
+ * 返回 edited 中与 base 不同的键值（新增或修改的）
+ */
+export function extractDiff(base: any, edited: any): Record<string, any> {
+  const diff: Record<string, any> = {}
+
+  for (const key in edited) {
+    if (!(key in base)) {
+      // 新增的键
+      diff[key] = edited[key]
+    } else if (
+      edited[key] && typeof edited[key] === 'object' && !Array.isArray(edited[key]) &&
+      base[key] && typeof base[key] === 'object' && !Array.isArray(base[key])
+    ) {
+      // 嵌套对象：递归比较
+      const nestedDiff = extractDiff(base[key], edited[key])
+      if (Object.keys(nestedDiff).length > 0) {
+        diff[key] = nestedDiff
+      }
+    } else if (JSON.stringify(base[key]) !== JSON.stringify(edited[key])) {
+      // 值不同
+      diff[key] = edited[key]
+    }
+  }
+
+  return diff
 }

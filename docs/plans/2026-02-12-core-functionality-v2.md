@@ -84,6 +84,6 @@
 ### Task 6: 验证与清理
 
 **步骤:**
-1. 删除旧数据：`rm -f ~/.cc-switch-web/providers.json`。
+1. 删除旧数据：`rm -f ~/.aimodelapi/providers.json`。
 2. 运行项目：`npm run dev`。
 3. 手动测试：创建不同类型的 Provider -> 编辑 -> 切换 -> 检查 `~/.claude/settings.json` 是否正确更新。

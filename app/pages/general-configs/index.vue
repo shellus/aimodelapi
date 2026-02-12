@@ -12,22 +12,9 @@ function formatJson(content: string): string {
   }
 }
 
-const applyingId = ref<string | null>(null)
 const deletingId = ref<string | null>(null)
 const deleteModal = ref(false)
 const configToDelete = ref<{ id: string, name: string } | null>(null)
-
-async function handleApply(id: string) {
-  applyingId.value = id
-  try {
-    await $fetch(`/api/general-configs/${id}/apply`, { method: 'POST' })
-    toast.add({ title: '配置已应用', color: 'success' })
-  } catch (error: any) {
-    toast.add({ title: '应用失败', description: error.message, color: 'error' })
-  } finally {
-    applyingId.value = null
-  }
-}
 
 function openDeleteModal(id: string, name: string) {
   configToDelete.value = { id, name }
@@ -101,31 +88,21 @@ async function confirmDelete() {
           </div>
 
           <template #footer>
-            <div class="flex w-full items-center justify-between">
-              <div class="flex gap-1">
-                <UButton
-                  icon="i-heroicons-pencil-square"
-                  variant="ghost"
-                  color="gray"
-                  size="sm"
-                  :to="`/general-configs/${config.id}`"
-                />
-                <UButton
-                  icon="i-heroicons-trash"
-                  variant="ghost"
-                  color="error"
-                  size="sm"
-                  @click="openDeleteModal(config.id, config.name)"
-                />
-              </div>
+            <div class="flex w-full items-center justify-end gap-1">
               <UButton
-                color="primary"
+                icon="i-heroicons-pencil-square"
+                variant="ghost"
+                color="gray"
                 size="sm"
-                :loading="applyingId === config.id"
-                @click="handleApply(config.id)"
-              >
-                应用此配置
-              </UButton>
+                :to="`/general-configs/${config.id}`"
+              />
+              <UButton
+                icon="i-heroicons-trash"
+                variant="ghost"
+                color="error"
+                size="sm"
+                @click="openDeleteModal(config.id, config.name)"
+              />
             </div>
           </template>
         </UCard>

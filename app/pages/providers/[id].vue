@@ -19,6 +19,7 @@ const form = reactive({
   websiteUrl: '',
   notes: '',
   generalConfigId: '',
+  configOverrides: {} as Record<string, any>,
   modelConfig: {
     model: '',
     thinkingModel: '',
@@ -31,9 +32,7 @@ const form = reactive({
 // 通用配置模板列表
 const generalConfigs = ref<GeneralConfig[]>([])
 const generalConfigOptions = computed(() => {
-  const options = generalConfigs.value.map(c => ({ label: c.name, value: c.id }))
-  console.log('generalConfigOptions:', options)
-  return options
+  return generalConfigs.value.map(c => ({ label: c.name, value: c.id }))
 })
 
 // JSON 编辑器内容
@@ -61,6 +60,27 @@ function deepMerge(target: any, source: any): any {
   return result
 }
 
+// 提取两个对象之间的增量差异
+function extractDiff(base: any, edited: any): Record<string, any> {
+  const diff: Record<string, any> = {}
+  for (const key in edited) {
+    if (!(key in base)) {
+      diff[key] = edited[key]
+    } else if (
+      edited[key] && typeof edited[key] === 'object' && !Array.isArray(edited[key]) &&
+      base[key] && typeof base[key] === 'object' && !Array.isArray(base[key])
+    ) {
+      const nestedDiff = extractDiff(base[key], edited[key])
+      if (Object.keys(nestedDiff).length > 0) {
+        diff[key] = nestedDiff
+      }
+    } else if (JSON.stringify(base[key]) !== JSON.stringify(edited[key])) {
+      diff[key] = edited[key]
+    }
+  }
+  return diff
+}
+
 // 生成 Provider 环境变量配置
 function generateProviderEnv() {
   const env: Record<string, string> = {
@@ -77,21 +97,24 @@ function generateProviderEnv() {
 const mergedConfig = computed(() => {
   let config: any = {}
 
-  // 1. 如果选择了模板，先应用模板
+  // Layer 2: 模板
   if (form.generalConfigId) {
     const template = generalConfigs.value.find(c => c.id === form.generalConfigId)
     if (template) {
       try {
         config = JSON.parse(template.content)
-      } catch (e) {
-        console.error('模板 JSON 解析失败', e)
-      }
+      } catch (e) { /* ignore */ }
     }
   }
 
-  // 2. 合并 Provider 自身的环境变量
+  // Layer 1: Provider 环境变量
   const providerEnv = generateProviderEnv()
   config = deepMerge(config, { env: providerEnv })
+
+  // Layer 3: 用户覆写
+  if (Object.keys(form.configOverrides).length > 0) {
+    config = deepMerge(config, form.configOverrides)
+  }
 
   return JSON.stringify(config, null, 2)
 })
@@ -101,24 +124,11 @@ watch(mergedConfig, (newValue) => {
   jsonContent.value = newValue
 })
 
-// JSON 编辑器内容变化时，尝试解析回填表单
+// JSON 编辑器内容变化时，验证 JSON 格式
 watch(jsonContent, (newValue) => {
   try {
-    const parsed = JSON.parse(newValue)
+    JSON.parse(newValue)
     isJsonValid.value = true
-
-    // 解析环境变量回填表单
-    if (parsed.env) {
-      if (parsed.env.ANTHROPIC_AUTH_TOKEN) {
-        form.apiKey = parsed.env.ANTHROPIC_AUTH_TOKEN
-      }
-      if (parsed.env.ANTHROPIC_BASE_URL) {
-        form.baseUrl = parsed.env.ANTHROPIC_BASE_URL
-      }
-      if (parsed.env.ANTHROPIC_MODEL) {
-        form.modelConfig.model = parsed.env.ANTHROPIC_MODEL
-      }
-    }
   } catch (e) {
     isJsonValid.value = false
   }
@@ -128,9 +138,8 @@ watch(jsonContent, (newValue) => {
 async function loadGeneralConfigs() {
   try {
     generalConfigs.value = await $fetch<GeneralConfig[]>('/api/general-configs')
-    console.log('加载的通用配置模板:', generalConfigs.value)
   } catch (error) {
-    console.error('加载通用配置模板失败', error)
+    // 静默处理，模板列表为空不影响核心功能
   }
 }
 
@@ -149,6 +158,7 @@ onMounted(async () => {
       form.websiteUrl = provider.websiteUrl || ''
       form.notes = provider.notes || ''
       form.generalConfigId = provider.generalConfigId || ''
+      form.configOverrides = provider.configOverrides || {}
 
       // 映射模型配置
       if (provider.modelConfig) {
@@ -174,6 +184,23 @@ function handleCancel() {
 async function handleSubmit() {
   loading.value = true
   try {
+    // 计算 L1+L2 的 base（不含 L3）
+    let base: any = {}
+    if (form.generalConfigId) {
+      const template = generalConfigs.value.find(c => c.id === form.generalConfigId)
+      if (template) {
+        try { base = JSON.parse(template.content) } catch (e) { /* */ }
+      }
+    }
+    base = deepMerge(base, { env: generateProviderEnv() })
+
+    // 用户编辑后的完整 JSON
+    let edited: any = {}
+    try { edited = JSON.parse(jsonContent.value) } catch (e) { /* */ }
+
+    // 提取增量 diff
+    const overrides = extractDiff(base, edited)
+
     // 处理提交数据，移除空字段
     const submitBody: any = {
       name: form.name,
@@ -183,6 +210,7 @@ async function handleSubmit() {
       notes: form.notes,
       websiteUrl: form.websiteUrl,
       generalConfigId: form.generalConfigId || undefined,
+      configOverrides: Object.keys(overrides).length > 0 ? overrides : {},
       modelConfig: {}
     }
 
@@ -385,13 +413,23 @@ watch(() => form.apiKey, (newKey) => {
 
           <!-- 关联通用配置模板 -->
           <UFormField label="关联通用配置模板" name="generalConfigId">
-            <USelect
-              v-model="form.generalConfigId"
-              :items="generalConfigOptions"
-              placeholder="选择通用配置模板（可选）"
-              size="lg"
-              class="w-full"
-            />
+            <div class="flex items-center gap-2">
+              <USelect
+                v-model="form.generalConfigId"
+                :items="generalConfigOptions"
+                placeholder="选择通用配置模板（可选）"
+                size="lg"
+                class="w-full"
+              />
+              <UButton
+                v-if="form.generalConfigId"
+                color="neutral"
+                variant="ghost"
+                icon="i-heroicons-x-mark"
+                size="lg"
+                @click="form.generalConfigId = ''"
+              />
+            </div>
             <template #help>
               <p class="mt-1.5 text-sm text-subtle">
                 选择一个通用配置模板，切换 Provider 时会先应用模板配置，再写入 Provider 自身的环境变量。
@@ -414,8 +452,8 @@ watch(() => form.apiKey, (newKey) => {
                 >
                   {{ isJsonValid ? '✓ JSON 格式正确' : '✗ JSON 格式错误' }}
                 </UBadge>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  编辑 JSON 后，环境变量字段会自动回填到上方表单。
+                <p class="text-sm text-muted">
+                  编辑 JSON 可自定义配置，保存时会自动计算与模板的差异并保留。
                 </p>
               </div>
             </template>
