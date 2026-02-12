@@ -228,7 +228,7 @@ onMounted(refresh)
           item-key="id"
           :animation="200"
           handle=".drag-handle"
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          class="grid grid-cols-1 md:grid-cols-2 gap-4"
           @end="handleDragEnd"
         >
           <template #item="{ element: p }">
@@ -262,13 +262,9 @@ onMounted(refresh)
 
                 <!-- 内容 -->
                 <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2">
-                    <div class="text-sm font-semibold text-default truncate">{{ p.name }}</div>
-                    <UBadge v-if="p.notes" color="gray" variant="soft" size="xs" class="font-normal shrink-0">
-                      {{ p.notes }}
-                    </UBadge>
-                  </div>
+                  <div class="text-base font-bold text-default truncate">{{ p.name }}</div>
                   <div class="mt-0.5 text-xs text-subtle truncate">{{ p.baseUrl }}</div>
+                  <div v-if="p.notes" class="mt-0.5 text-xs text-muted truncate">{{ p.notes }}</div>
                 </div>
 
                 <!-- 操作按钮（悬停/选中时显示） -->
