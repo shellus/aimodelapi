@@ -14,6 +14,10 @@ const colorMode = useColorMode()
 
 const toast = useToast()
 
+// 删除确认弹窗
+const deleteModal = ref(false)
+const providerToDelete = ref<{ id: string, name: string } | null>(null)
+
 // 按类型过滤的 Provider（按 sortIndex 排序）
 const filteredProviders = computed({
   get() {
@@ -69,13 +73,23 @@ function startEdit(p: Provider) {
   router.push(`/providers/${p.id}`)
 }
 
-async function handleDelete(id: string) {
+function openDeleteModal(id: string, name: string) {
+  providerToDelete.value = { id, name }
+  deleteModal.value = true
+}
+
+async function confirmDelete() {
+  if (!providerToDelete.value) return
+
   try {
-    await $fetch(`/api/providers/${id}`, { method: 'DELETE' })
+    await $fetch(`/api/providers/${providerToDelete.value.id}`, { method: 'DELETE' })
     toast.add({ title: '删除成功', color: 'success' })
     await refresh()
   } catch (error) {
     toast.add({ title: '删除失败', description: String(error), color: 'error' })
+  } finally {
+    deleteModal.value = false
+    providerToDelete.value = null
   }
 }
 
@@ -288,7 +302,7 @@ onMounted(refresh)
                     size="xs"
                     icon="i-heroicons-trash"
                     title="删除"
-                    @click="handleDelete(p.id)"
+                    @click="openDeleteModal(p.id, p.name)"
                   />
                 </div>
               </div>
@@ -304,5 +318,37 @@ onMounted(refresh)
         />
       </main>
     </div>
+
+    <!-- 删除确认弹窗 -->
+    <UModal v-model:open="deleteModal" title="确认删除">
+      <template #body>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+            <UIcon name="i-heroicons-exclamation-triangle" class="h-5 w-5 text-red-600 dark:text-red-400" />
+          </div>
+        </div>
+        <p class="text-gray-600 dark:text-gray-400">
+          确定要删除 Provider <strong class="text-gray-900 dark:text-white">{{ providerToDelete?.name }}</strong> 吗？此操作无法撤销。
+        </p>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton
+            variant="ghost"
+            color="gray"
+            @click="deleteModal = false"
+          >
+            取消
+          </UButton>
+          <UButton
+            color="error"
+            @click="confirmDelete"
+          >
+            确认删除
+          </UButton>
+        </div>
+      </template>
+    </UModal>
   </UApp>
 </template>
