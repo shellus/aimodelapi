@@ -20,17 +20,16 @@ onMounted(async () => {
   if (isEditMode.value) {
     loading.value = true
     try {
-      const configs = await $fetch<GeneralConfig[]>('/api/general-configs')
-      const config = configs.find(c => c.id === configId)
-      if (config) {
-        form.name = config.name
-        form.content = config.content
-      } else {
-        toast.add({ title: '找不到该配置', color: 'error' })
-        router.push('/general-configs')
-      }
-    } catch (error) {
-      toast.add({ title: '加载失败', color: 'error' })
+      const config = await $fetch<GeneralConfig>(`/api/general-configs/${configId}`)
+      form.name = config.name
+      form.content = config.content
+    } catch (error: any) {
+      toast.add({
+        title: '加载失败',
+        description: error.data?.statusMessage || error.message,
+        color: 'error'
+      })
+      router.push('/general-configs')
     } finally {
       loading.value = false
     }
@@ -123,13 +122,7 @@ async function handleSubmit() {
                 该 JSON 将被深度合并到 <code>~/.claude/settings.json</code> 中。环境变量（env）将被自动保护。
               </p>
             </template>
-            <UTextarea
-              v-model="form.content"
-              placeholder='{ "theme": "dark" }'
-              :rows="15"
-              size="lg"
-              class="w-full font-mono"
-            />
+            <JsonEditor v-model="form.content" />
           </UFormField>
         </UForm>
       </UCard>

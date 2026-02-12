@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Provider } from '@/types'
+import VueDraggable from 'vuedraggable'
 
 const router = useRouter()
 const providers = ref<Provider[]>([])
@@ -13,9 +14,21 @@ const colorMode = useColorMode()
 
 const toast = useToast()
 
-// 按类型过滤的 Provider
-const filteredProviders = computed(() => {
-  return providers.value.filter(p => p.type === activeTab.value)
+// 按类型过滤的 Provider（按 sortIndex 排序）
+const filteredProviders = computed({
+  get() {
+    return providers.value
+      .filter(p => p.type === activeTab.value)
+      .sort((a, b) => (a.sortIndex ?? 999) - (b.sortIndex ?? 999))
+  },
+  set(newValue) {
+    // 更新拖拽后的顺序和 sortIndex
+    newValue.forEach((p, index) => {
+      p.sortIndex = index
+    })
+    const otherProviders = providers.value.filter(p => p.type !== activeTab.value)
+    providers.value = [...otherProviders, ...newValue]
+  }
 })
 
 // 类型对应的图标映射
@@ -29,6 +42,15 @@ const typeIcons: Record<string, string> = {
 // 切换深色模式
 function toggleColorMode() {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
+
+// 显示功能未完成提示
+function showFeatureNotReady(featureName: string) {
+  toast.add({
+    title: `${featureName}功能开发中`,
+    description: '该功能将在后续版本中推出',
+    color: 'warning',
+  })
 }
 
 async function fetchProviders() {
@@ -70,6 +92,24 @@ async function handleSwitch(id: string) {
   }
 }
 
+// 拖动排序处理
+async function handleDragEnd() {
+  const updates = filteredProviders.value.map((p, index) => ({
+    id: p.id,
+    sortIndex: index,
+  }))
+
+  try {
+    await $fetch('/api/providers/sort', {
+      method: 'PATCH',
+      body: updates,
+    })
+  } catch (error) {
+    toast.add({ title: '排序保存失败', description: String(error), color: 'error' })
+    await refresh() // 恢复原顺序
+  }
+}
+
 onMounted(refresh)
 </script>
 
@@ -88,15 +128,17 @@ onMounted(refresh)
                 variant="ghost"
                 size="sm"
                 icon="i-heroicons-cog-6-tooth"
+                title="设置"
+                @click="showFeatureNotReady('设置')"
               />
               <UButton
                 color="gray"
                 variant="ghost"
                 size="sm"
                 :icon="colorMode.value === 'dark' ? 'i-heroicons-moon' : 'i-heroicons-sun'"
+                title="切换深色模式"
                 @click="toggleColorMode"
               />
-              <UToggle size="lg" />
             </div>
 
             <!-- 中间：标签页切换 -->
@@ -134,18 +176,24 @@ onMounted(refresh)
                 variant="ghost"
                 size="sm"
                 icon="i-heroicons-wrench"
+                title="Skills 管理"
+                @click="showFeatureNotReady('Skills 管理')"
               />
               <UButton
                 color="gray"
                 variant="ghost"
                 size="sm"
                 icon="i-heroicons-book-open"
+                title="系统提示词管理"
+                @click="showFeatureNotReady('系统提示词管理')"
               />
               <UButton
                 color="gray"
                 variant="ghost"
                 size="sm"
-                icon="i-heroicons-paper-clip"
+                icon="i-heroicons-clock"
+                title="会话历史管理"
+                @click="showFeatureNotReady('会话历史管理')"
               />
               <UButton
                 color="primary"
@@ -160,116 +208,100 @@ onMounted(refresh)
       </header>
 
       <!-- 主内容区 -->
-      <main class="mx-auto max-w-7xl px-8 py-12">
+      <main class="mx-auto max-w-7xl px-8 py-8">
         <!-- Provider 列表 -->
-        <div class="space-y-5">
-          <div
-            v-for="p in filteredProviders"
-            :key="p.id"
-            class="group relative transition-all"
-            :class="[
-              p.isCurrent
-                ? 'rounded-2xl border-2 border-primary-500 bg-white shadow-lg dark:bg-gray-950'
-                : 'rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950',
-            ]"
-            @mouseenter="hoveredId = p.id"
-            @mouseleave="hoveredId = null"
-          >
-            <div class="flex items-center gap-5 p-6">
-              <!-- 拖拽手柄 -->
-              <div class="cursor-move text-gray-400">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-                </svg>
-              </div>
-
-              <!-- 图标 -->
-              <div
-                class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-lg font-bold"
-                :class="[
-                  p.isCurrent
-                    ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300'
-                    : 'border-gray-300 bg-gray-100 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300',
-                ]"
-              >
-                {{ p.icon || p.name.charAt(0).toUpperCase() }}
-              </div>
-
-              <!-- 内容 -->
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                  <div class="text-base font-semibold text-gray-900 dark:text-white">{{ p.name }}</div>
-                  <UBadge v-if="p.notes" color="gray" variant="soft" size="sm" class="font-normal">
-                    {{ p.notes }}
-                  </UBadge>
+        <VueDraggable
+          v-model="filteredProviders"
+          item-key="id"
+          :animation="200"
+          handle=".drag-handle"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          @end="handleDragEnd"
+        >
+          <template #item="{ element: p }">
+            <div
+              class="group relative transition-all"
+              :class="[
+                p.isCurrent
+                  ? 'rounded-xl border-2 border-primary-500 bg-white shadow-lg dark:bg-gray-950'
+                  : 'rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950',
+              ]"
+              @mouseenter="hoveredId = p.id"
+              @mouseleave="hoveredId = null"
+            >
+              <div class="flex items-center gap-4 p-4">
+                <!-- 拖拽手柄 -->
+                <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                  </svg>
                 </div>
-                <div class="mt-1 text-sm text-gray-500 dark:text-gray-400 truncate">{{ p.baseUrl }}</div>
-              </div>
 
-              <!-- 操作按钮（悬停/选中时显示） -->
-              <div
-                v-if="p.isCurrent || hoveredId === p.id"
-                class="flex shrink-0 items-center gap-2.5"
-              >
-                <UButton
-                  v-if="!p.isCurrent"
-                  color="primary"
-                  size="md"
-                  :loading="loading"
-                  @click="handleSwitch(p.id)"
+                <!-- 图标 -->
+                <div
+                  class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 text-base font-bold"
+                  :class="[
+                    p.isCurrent
+                      ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300'
+                      : 'border-gray-300 bg-gray-100 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                  ]"
                 >
-                  ▶ 启用
-                </UButton>
-                <UButton
-                  color="gray"
-                  variant="ghost"
-                  size="sm"
-                  icon="i-heroicons-pencil"
-                  @click="startEdit(p)"
-                />
-                <UButton
-                  color="gray"
-                  variant="ghost"
-                  size="sm"
-                  icon="i-heroicons-clipboard-document"
-                />
-                <UButton
-                  color="gray"
-                  variant="ghost"
-                  size="sm"
-                  icon="i-heroicons-pencil-square"
-                />
-                <UButton
-                  color="gray"
-                  variant="ghost"
-                  size="sm"
-                  icon="i-heroicons-chart-bar"
-                />
-                <UButton
-                  color="gray"
-                  variant="ghost"
-                  size="sm"
-                  icon="i-heroicons-command-line"
-                />
-                <UButton
-                  color="red"
-                  variant="ghost"
-                  size="sm"
-                  icon="i-heroicons-trash"
-                  @click="handleDelete(p.id)"
-                />
+                  {{ p.icon || p.name.charAt(0).toUpperCase() }}
+                </div>
+
+                <!-- 内容 -->
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2">
+                    <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ p.name }}</div>
+                    <UBadge v-if="p.notes" color="gray" variant="soft" size="xs" class="font-normal shrink-0">
+                      {{ p.notes }}
+                    </UBadge>
+                  </div>
+                  <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">{{ p.baseUrl }}</div>
+                </div>
+
+                <!-- 操作按钮（悬停/选中时显示） -->
+                <div
+                  v-if="p.isCurrent || hoveredId === p.id"
+                  class="flex shrink-0 items-center gap-1.5"
+                >
+                  <UButton
+                    v-if="!p.isCurrent"
+                    color="primary"
+                    size="xs"
+                    :loading="loading"
+                    @click="handleSwitch(p.id)"
+                  >
+                    启用
+                  </UButton>
+                  <UButton
+                    color="gray"
+                    variant="ghost"
+                    size="xs"
+                    icon="i-heroicons-pencil"
+                    title="编辑"
+                    @click="startEdit(p)"
+                  />
+                  <UButton
+                    color="red"
+                    variant="ghost"
+                    size="xs"
+                    icon="i-heroicons-trash"
+                    title="删除"
+                    @click="handleDelete(p.id)"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </template>
+        </VueDraggable>
 
-          <!-- 空状态 -->
-          <UEmptyState
-            v-if="filteredProviders.length === 0"
-            title="暂无 Provider"
-            :description="`点击右上角添加第一个 ${typeIcons[activeTab]} ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Provider`"
-            icon="i-heroicons-inbox"
-          />
-        </div>
+        <!-- 空状态 -->
+        <UEmpty
+          v-if="filteredProviders.length === 0"
+          :description="`点击右上角添加第一个 ${typeIcons[activeTab]} ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Provider`"
+          icon="i-heroicons-inbox"
+        />
       </main>
     </div>
   </UApp>

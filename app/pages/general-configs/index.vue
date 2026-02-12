@@ -4,8 +4,18 @@ import type { GeneralConfig } from '@/types'
 const toast = useToast()
 const { data: configs, refresh } = await useFetch<GeneralConfig[]>('/api/general-configs')
 
+function formatJson(content: string): string {
+  try {
+    return JSON.stringify(JSON.parse(content), null, 2)
+  } catch {
+    return content
+  }
+}
+
 const applyingId = ref<string | null>(null)
 const deletingId = ref<string | null>(null)
+const deleteModal = ref(false)
+const configToDelete = ref<{ id: string, name: string } | null>(null)
 
 async function handleApply(id: string) {
   applyingId.value = id
@@ -19,18 +29,25 @@ async function handleApply(id: string) {
   }
 }
 
-async function handleDelete(id: string) {
-  if (!confirm('确定要删除此配置模板吗？')) return
+function openDeleteModal(id: string, name: string) {
+  configToDelete.value = { id, name }
+  deleteModal.value = true
+}
 
-  deletingId.value = id
+async function confirmDelete() {
+  if (!configToDelete.value) return
+
+  deletingId.value = configToDelete.value.id
   try {
-    await $fetch(`/api/general-configs/${id}`, { method: 'DELETE' })
+    await $fetch(`/api/general-configs/${configToDelete.value.id}`, { method: 'DELETE' })
     toast.add({ title: '配置已删除', color: 'success' })
     await refresh()
   } catch (error: any) {
     toast.add({ title: '删除失败', description: error.message, color: 'error' })
   } finally {
     deletingId.value = null
+    deleteModal.value = false
+    configToDelete.value = null
   }
 }
 </script>
@@ -80,7 +97,7 @@ async function handleDelete(id: string) {
 
           <!-- 预览内容 -->
           <div class="mb-6 rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
-            <pre class="max-h-32 overflow-hidden text-xs text-gray-600 dark:text-gray-400"><code>{{ config.content }}</code></pre>
+            <pre class="max-h-32 overflow-hidden text-xs text-gray-600 dark:text-gray-400"><code>{{ formatJson(config.content) }}</code></pre>
           </div>
 
           <template #footer>
@@ -98,8 +115,7 @@ async function handleDelete(id: string) {
                   variant="ghost"
                   color="error"
                   size="sm"
-                  :loading="deletingId === config.id"
-                  @click="handleDelete(config.id)"
+                  @click="openDeleteModal(config.id, config.name)"
                 />
               </div>
               <UButton
@@ -128,5 +144,38 @@ async function handleDelete(id: string) {
         </UButton>
       </div>
     </main>
+
+    <!-- 删除确认弹窗 -->
+    <UModal v-model:open="deleteModal" title="确认删除">
+      <template #body>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+            <UIcon name="i-heroicons-exclamation-triangle" class="h-5 w-5 text-red-600 dark:text-red-400" />
+          </div>
+        </div>
+        <p class="text-gray-600 dark:text-gray-400">
+          确定要删除配置模板 <strong class="text-gray-900 dark:text-white">{{ configToDelete?.name }}</strong> 吗？此操作无法撤销。
+        </p>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton
+            variant="ghost"
+            color="gray"
+            @click="deleteModal = false"
+          >
+            取消
+          </UButton>
+          <UButton
+            color="error"
+            :loading="deletingId === configToDelete?.id"
+            @click="confirmDelete"
+          >
+            确认删除
+          </UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

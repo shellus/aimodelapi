@@ -1,5 +1,60 @@
 # CC-Switch-Web 开发规范
 
+## 🚨 开发铁律（必读！）
+
+### 文档优先原则
+
+**铁律：先查文档，再写代码。绝不凭印象和猜测写代码。**
+
+#### ❌ 错误的工作流程（禁止！）
+1. 凭"印象"和"猜测"写代码（脑补组件应该怎么用）
+2. 出问题了才去"找"文档
+3. 找到一个看起来相关的例子
+4. 修修补补（试错驱动开发）
+5. 再次出错，继续修补
+
+**症状**：
+- 说"让我查文档"，实际上是在找支持已有代码的例子
+- 写了代码后才发现理解错了
+- 反复修改同一段代码
+- 自以为"知道"怎么用，跳过查文档
+
+#### ✅ 正确的工作流程（强制执行！）
+1. **使用任何新组件/API 前，必须先完整阅读官方文档和示例**
+2. **理解设计理念**（例如：UModal 已内置 title/body/footer，不需要嵌套 UCard）
+3. **按照标准用法一次写对**
+4. 如有疑问，查阅项目中已有的同类代码实现
+
+**检查清单**：
+- [ ] 我是否阅读了官方文档的完整示例？
+- [ ] 我是否理解了组件的设计理念？
+- [ ] 我是否检查了项目中已有的同类实现？
+- [ ] 我是在**知识驱动**而非**试错驱动**？
+
+#### 实战案例：UModal 的惨痛教训
+
+**错误过程**：
+1. 凭印象写了 `<UModal v-model="...">`（v3 语法）
+2. 错误地在内部嵌套 `<UCard>`（根本不理解 UModal 的设计）
+3. 发现弹窗默认显示，改成 `v-model:open`
+4. 仍然有问题，因为嵌套结构是错的
+5. 最后才真正读文档，发现 UModal 本身就支持 title/body/footer
+
+**正确做法**：
+1. 打开 nuxt-ui 技能或官方文档
+2. 阅读 UModal 的完整示例
+3. 理解：UModal 是完整的对话框容器，有自己的插槽结构
+4. 一次写对：`<UModal v-model:open="..." title="..."><template #body>...</template></UModal>`
+
+### DRY 原则强化
+
+在实现任何功能前：
+1. **必须**检查项目中是否有类似实现
+2. **必须**复用已有的组件和工具函数
+3. **必须**遵循项目已有的代码风格和模式
+
+**反面案例**：项目已有 `JsonEditor` 组件，却自己用 `UTextarea` 实现 JSON 编辑。
+
 ## UI 框架规范
 
 ### 技术栈
@@ -52,7 +107,42 @@
 - `UTextarea` - 必须添加
 - 所有表单输入组件 - 都建议添加
 
-#### 3. 必需的配置
+#### 3. Modal/Slideover 等弹窗组件使用 `v-model:open`
+
+**错误示例（v3 语法）：**
+```vue
+<UModal v-model="isOpen">
+  <UCard>
+    <template #header>标题</template>
+    内容
+  </UCard>
+</UModal>
+```
+
+**正确示例（v4 语法）：**
+```vue
+<UModal v-model:open="isOpen" title="标题">
+  <template #body>内容</template>
+  <template #footer>
+    <UButton @click="isOpen = false">关闭</UButton>
+  </template>
+</UModal>
+```
+
+**关键点**：
+- 使用 `v-model:open` 而非 `v-model`
+- UModal 本身支持 `title`、`#body`、`#footer` 插槽
+- **不要**在 UModal 内部嵌套 UCard（这是常见错误！）
+- UModal 已经是一个完整的对话框容器，有自己的结构
+
+**症状**：使用 `v-model` 会导致弹窗状态控制失效，页面加载时弹窗可能默认显示。嵌套 UCard 会导致样式混乱。
+
+**适用组件**：
+- `UModal` - 必须使用 `v-model:open`
+- `USlideover` - 必须使用 `v-model:open`
+- `UContextMenu` - 必须使用 `v-model:open`
+
+#### 4. 必需的配置
 
 在 `nuxt.config.ts` 中：
 ```typescript
@@ -145,15 +235,28 @@ export default defineNuxtConfig({
 - 统一错误提示样式
 - 实时验证 + 提交验证
 
-示例：
-```vue
-<UForm :schema="schema" :state="state" @submit="onSubmit">
-  <UFormGroup label="Provider 名称" name="name">
-    <UInput v-model="state.name" />
-  </UFormGroup>
-  <UButton type="submit">提交</UButton>
-</UForm>
-```
+> [!important]
+> 后端 API 路由（`server/api/`）**必须**引入 `zod` 对请求体进行校验，确保数据持久化前的安全性。
+
+### 后端开发经验
+
+#### 1. API 路由结构
+- 详情获取：`[id].get.ts`
+- 状态切换：`[id]/switch.post.ts`
+- 列表获取：`index.get.ts`
+
+#### 2. 工具函数封装
+- 核心逻辑（如文件读写、环境切换）应封装在 `server/utils/` 中，保持 API 层的简洁。
+- 路径处理：始终使用 `node:path` 和 `node:os` 的 `homedir()` 处理用户目录。
+- 文件写入：必须采用原子化写入策略（先写 `.tmp` 文件，再 `rename`），防止因进程意外中断导致配置文件损坏。
+
+#### 3. 依赖项注意
+- 确保 `zod` 已正确安装并包含在 `package.json` 中，否则热更新可能导致后端 500 错误。
+
+#### 4. 配置合并与联动规范
+- **ENV 保护策略**：应用通用配置模板（如插件、权限）时，必须先备份当前的 `env` 字段，并在合并后强制写回。这是确保 Provider 切换管理不失效的铁律。
+- **联动切换逻辑**：在执行 `switchProvider` 时，应优先检查目标 Provider 是否关联了 `generalConfigId`。若关联，必须先应用该模板内容，再写入 Provider 自身的 Key 和 URL。
+- **深合并算法**：配置合并应使用递归的 `deepMerge`，而非简单的 `Object.assign`，以支持嵌套结构的增量更新。
 
 ### 交互规范
 

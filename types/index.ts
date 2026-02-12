@@ -26,6 +26,7 @@ export interface Provider {
 
   // 状态信息
   isCurrent: boolean             // 是否为当前激活的 Provider
+  generalConfigId?: string       // 关联的通用配置模板 ID
   inFailoverQueue?: boolean      // 是否加入故障转移队列
 
   // 时间戳
@@ -101,6 +102,7 @@ export interface ProviderRequest {
   notes?: string
   icon?: string
   iconColor?: string
+  generalConfigId?: string
   modelConfig?: ClaudeModelConfig
   meta?: ProviderMeta
 }

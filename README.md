@@ -26,7 +26,11 @@ npm run dev
 ## 项目进度
 
 - [x] 项目初始化：Nuxt 4 + Tailwind CSS 4
-- [ ] Server 工具函数（providers.ts / claude-settings.ts）
-- [ ] Server API 路由（CRUD + 切换）
-- [ ] 前端页面（Provider 管理 UI）
+- [x] Server 工具函数（providers.ts / claude-settings.ts）
+- [x] Server API 路由（CRUD + 切换）
+- [x] 前端页面（Provider 管理 UI）
 - [ ] 集成测试
+
+## 文档索引
+
+- [功能介绍：供应商管理](./docs/features/provider-management.md)
