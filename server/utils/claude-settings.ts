@@ -39,6 +39,56 @@ export async function writeClaudeEnv(env: Record<string, string>) {
   await writeClaudeSettings(settings)
 }
 
+/**
+ * 简单的深合并函数
+ */
+function deepMerge(target: any, source: any) {
+  if (!source || typeof source !== 'object') return target
+  if (!target || typeof target !== 'object') return source
+
+  const result = { ...target }
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      result[key] = deepMerge(target[key] || {}, source[key])
+    } else {
+      result[key] = source[key]
+    }
+  }
+  return result
+}
+
+/**
+ * 应用通用配置内容（带环境变量保护）
+ */
+export async function applyGeneralConfigContent(content: string) {
+  const current = await readClaudeSettings()
+
+  // 1. 强制保留当前的环境变量（由 Provider 管理器维护）
+  const oldEnv = current.env ? { ...current.env } : undefined
+
+  // 2. 解析新配置
+  let newConfigData: any
+  try {
+    newConfigData = JSON.parse(content)
+  } catch (e) {
+    throw new Error('无效的 JSON 配置内容')
+  }
+
+  // 3. 执行深合并
+  const mergedSettings = deepMerge(current, newConfigData)
+
+  // 4. 强制还原环境变量
+  if (oldEnv) {
+    mergedSettings.env = oldEnv
+  } else {
+    delete mergedSettings.env
+  }
+
+  // 5. 写入系统配置
+  await writeClaudeSettings(mergedSettings)
+  return mergedSettings
+}
+
 export async function clearClaudeEnv() {
   const settings = await readClaudeSettings()
   if (!settings.env) return
