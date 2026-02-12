@@ -53,9 +53,9 @@ async function confirmDelete() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen bg-muted">
     <!-- 顶部导航 -->
-    <header class="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80">
+    <header class="sticky top-0 z-10 border-b border-muted bg-elevated/80 backdrop-blur-md">
       <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <div class="flex items-center gap-4">
           <UButton
@@ -64,7 +64,7 @@ async function confirmDelete() {
             color="gray"
             to="/"
           />
-          <h1 class="text-xl font-bold text-gray-900 dark:text-white">通用配置模板</h1>
+          <h1 class="text-xl font-bold text-default">通用配置模板</h1>
         </div>
         <UButton
           to="/general-configs/add"
@@ -86,18 +86,18 @@ async function confirmDelete() {
         >
           <div class="mb-4 flex items-start justify-between">
             <div class="min-w-0 flex-1">
-              <h3 class="truncate text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 class="truncate text-lg font-semibold text-default">
                 {{ config.name }}
               </h3>
-              <p class="mt-1 text-xs text-gray-500">
+              <p class="mt-1 text-xs text-subtle">
                 创建于 {{ new Date(config.createdAt).toLocaleString() }}
               </p>
             </div>
           </div>
 
           <!-- 预览内容 -->
-          <div class="mb-6 rounded-lg bg-gray-100 p-3 dark:bg-gray-800">
-            <pre class="max-h-32 overflow-hidden text-xs text-gray-600 dark:text-gray-400"><code>{{ formatJson(config.content) }}</code></pre>
+          <div class="mb-6 rounded-lg bg-muted p-3">
+            <pre class="max-h-32 overflow-hidden text-xs text-muted"><code>{{ formatJson(config.content) }}</code></pre>
           </div>
 
           <template #footer>

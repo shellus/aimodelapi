@@ -228,10 +228,9 @@ watch(() => form.apiKey, (newKey) => {
 </script>
 
 <template>
-  <UApp>
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="min-h-screen bg-muted">
       <!-- 顶部导航 -->
-      <header class="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+      <header class="border-b border-muted bg-elevated">
         <div class="mx-auto max-w-5xl px-8">
           <div class="flex h-16 items-center gap-4">
             <UButton
@@ -241,7 +240,7 @@ watch(() => form.apiKey, (newKey) => {
               size="sm"
               @click="handleCancel"
             />
-            <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+            <h1 class="text-xl font-bold text-default">
               {{ isEditMode ? '编辑供应商' : '添加新供应商' }}
             </h1>
           </div>
@@ -376,7 +375,7 @@ watch(() => form.apiKey, (newKey) => {
               class="w-full"
             />
             <template #help>
-              <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-sm text-subtle">
                 指定不同场景下的默认模型，留空则使用系统默认。
               </p>
             </template>
@@ -394,7 +393,7 @@ watch(() => form.apiKey, (newKey) => {
               class="w-full"
             />
             <template #help>
-              <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <p class="mt-1.5 text-sm text-subtle">
                 选择一个通用配置模板，切换 Provider 时会先应用模板配置，再写入 Provider 自身的环境变量。
               </p>
             </template>
@@ -444,5 +443,4 @@ watch(() => form.apiKey, (newKey) => {
         </UForm>
       </main>
     </div>
-  </UApp>
 </template>

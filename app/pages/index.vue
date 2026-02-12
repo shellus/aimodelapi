@@ -128,15 +128,14 @@ onMounted(refresh)
 </script>
 
 <template>
-  <UApp>
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div class="min-h-screen bg-muted">
       <!-- 顶部工具栏 -->
-      <header class="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+      <header class="border-b border-muted bg-elevated">
         <div class="mx-auto max-w-7xl px-8">
           <div class="flex h-20 items-center justify-between">
             <!-- 左侧：品牌 + 状态 -->
             <div class="flex items-center gap-6">
-              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">CC Switch</h1>
+              <h1 class="text-2xl font-bold text-default">CC Switch</h1>
               <UButton
                 color="gray"
                 variant="ghost"
@@ -166,7 +165,7 @@ onMounted(refresh)
               ]"
               :ui="{
                 list: {
-                  background: 'bg-gray-100 dark:bg-gray-900',
+                  background: 'bg-muted',
                   rounded: 'rounded-full',
                   padding: 'p-1.5',
                   gap: 'gap-1',
@@ -237,18 +236,16 @@ onMounted(refresh)
               class="group relative transition-all"
               :class="[
                 p.isCurrent
-                  ? 'rounded-xl border-2 border-primary-500 bg-white shadow-lg dark:bg-gray-950'
-                  : 'rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950',
+                  ? 'rounded-xl border-2 border-primary-500 bg-elevated shadow-lg'
+                  : 'rounded-xl border border-muted bg-elevated',
               ]"
               @mouseenter="hoveredId = p.id"
               @mouseleave="hoveredId = null"
             >
               <div class="flex items-center gap-4 p-4">
                 <!-- 拖拽手柄 -->
-                <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
-                  </svg>
+                <div class="drag-handle cursor-move text-muted hover:text-default">
+                  <UIcon name="i-heroicons-bars-3" class="size-4" />
                 </div>
 
                 <!-- 图标 -->
@@ -257,7 +254,7 @@ onMounted(refresh)
                   :class="[
                     p.isCurrent
                       ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300'
-                      : 'border-gray-300 bg-gray-100 text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                      : 'border-muted bg-muted text-muted',
                   ]"
                 >
                   {{ p.icon || p.name.charAt(0).toUpperCase() }}
@@ -266,12 +263,12 @@ onMounted(refresh)
                 <!-- 内容 -->
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
-                    <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ p.name }}</div>
+                    <div class="text-sm font-semibold text-default truncate">{{ p.name }}</div>
                     <UBadge v-if="p.notes" color="gray" variant="soft" size="xs" class="font-normal shrink-0">
                       {{ p.notes }}
                     </UBadge>
                   </div>
-                  <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">{{ p.baseUrl }}</div>
+                  <div class="mt-0.5 text-xs text-subtle truncate">{{ p.baseUrl }}</div>
                 </div>
 
                 <!-- 操作按钮（悬停/选中时显示） -->
@@ -350,5 +347,4 @@ onMounted(refresh)
         </div>
       </template>
     </UModal>
-  </UApp>
 </template>

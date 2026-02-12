@@ -66,8 +66,8 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <header class="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80">
+  <div class="min-h-screen bg-muted">
+    <header class="sticky top-0 z-10 border-b border-muted bg-elevated/80 backdrop-blur-md">
       <div class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
         <div class="flex items-center gap-4">
           <UButton
@@ -76,7 +76,7 @@ async function handleSubmit() {
             color="gray"
             @click="router.back()"
           />
-          <h1 class="text-xl font-bold text-gray-900 dark:text-white">
+          <h1 class="text-xl font-bold text-default">
             {{ isEditMode ? '编辑模板' : '新建配置模板' }}
           </h1>
         </div>
@@ -118,7 +118,7 @@ async function handleSubmit() {
 
           <UFormField label="配置内容 (JSON)" name="content" required>
             <template #help>
-              <p class="mt-1 text-sm text-gray-500">
+              <p class="mt-1 text-sm text-subtle">
                 该 JSON 将被深度合并到 <code>~/.claude/settings.json</code> 中。环境变量（env）将被自动保护。
               </p>
             </template>

@@ -275,7 +275,25 @@ export default defineNuxtConfig({
 
 ### 颜色规范
 
-#### 语义化颜色
+#### 语义化颜色类（必须使用）
+
+**铁律：禁止使用原始 Tailwind 颜色类（如 `bg-gray-50`、`text-gray-900`），必须使用 Nuxt UI 的语义化类。**
+
+| 用途 | 语义化类 | 替代的原始类 |
+|------|---------|-------------|
+| 页面背景 | `bg-muted` | `bg-gray-50 dark:bg-gray-900` |
+| 卡片/容器背景 | `bg-elevated` | `bg-white dark:bg-gray-950` |
+| 边框 | `border-muted` | `border-gray-200 dark:border-gray-800` |
+| 主要文本 | `text-default` | `text-gray-900 dark:text-white` |
+| 次要文本 | `text-muted` | `text-gray-600 dark:text-gray-400` |
+| 辅助文本 | `text-subtle` | `text-gray-500 dark:text-gray-400` |
+
+**优势**：
+- 自动适配深色/浅色模式
+- 符合设计系统一致性
+- 主题切换无需修改代码
+
+#### 组件颜色属性
 - **Primary**: 主要操作（切换 Provider、保存配置）
 - **Success**: 成功状态（当前激活的 Provider）
 - **Warning**: 警告信息（配置不完整）
@@ -284,9 +302,17 @@ export default defineNuxtConfig({
 
 #### 使用方式
 ```vue
+<!-- 组件颜色属性 -->
 <UButton color="primary">主要操作</UButton>
 <UBadge color="success">已激活</UBadge>
 <UAlert color="warning">警告信息</UAlert>
+
+<!-- 语义化颜色类 -->
+<div class="bg-muted border border-muted">
+  <h1 class="text-default">标题</h1>
+  <p class="text-muted">次要文本</p>
+  <span class="text-subtle">辅助信息</span>
+</div>
 ```
 
 ### 响应式设计

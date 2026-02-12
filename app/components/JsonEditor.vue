@@ -68,12 +68,12 @@ onBeforeUnmount(() => {
 <template>
   <div
     ref="editorRef"
-    class="rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden"
+    class="rounded-lg border border-muted overflow-hidden"
     :class="{ 'opacity-60': readonly }"
   />
 </template>
 
-<style>
+<style scoped>
 .cm-editor {
   height: 400px;
   font-size: 14px;
