@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, rename, unlink } from 'node:fs/promises'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { homedir } from 'node:os'
@@ -25,9 +25,7 @@ export async function readProviders(): Promise<Provider[]> {
 
 export async function writeProviders(providers: Provider[]) {
   await ensureDir()
-  const tmp = PROVIDERS_FILE + '.tmp'
-  await writeFile(tmp, JSON.stringify(providers, null, 2), 'utf-8')
-  await rename(tmp, PROVIDERS_FILE)
+  await writeFile(PROVIDERS_FILE, JSON.stringify(providers, null, 2), 'utf-8')
 }
 
 export async function createProvider(data: ProviderRequest): Promise<Provider> {

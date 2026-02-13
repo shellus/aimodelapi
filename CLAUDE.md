@@ -277,7 +277,7 @@ export default defineNuxtConfig({
 #### 2. 工具函数封装
 - 核心逻辑（如文件读写、环境切换）应封装在 `server/utils/` 中，保持 API 层的简洁。
 - 路径处理：始终使用 `node:path` 和 `node:os` 的 `homedir()` 处理用户目录。
-- 文件写入：必须采用原子化写入策略（先写 `.tmp` 文件，再 `rename`），防止因进程意外中断导致配置文件损坏。
+- 文件写入：直接使用 `writeFile` 写入，不使用原子化策略。
 
 #### 3. 依赖项注意
 - 确保 `zod` 已正确安装并包含在 `package.json` 中，否则热更新可能导致后端 500 错误。

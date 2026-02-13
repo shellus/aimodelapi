@@ -1,4 +1,4 @@
-import { readFile, writeFile, rename, mkdir } from 'node:fs/promises'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { homedir } from 'node:os'
@@ -36,9 +36,7 @@ export async function readGeneralConfigs(): Promise<GeneralConfig[]> {
  */
 async function writeGeneralConfigs(configs: GeneralConfig[]) {
   await ensureDir()
-  const tmp = CONFIG_FILE + '.tmp'
-  await writeFile(tmp, JSON.stringify(configs, null, 2), 'utf-8')
-  await rename(tmp, CONFIG_FILE)
+  await writeFile(CONFIG_FILE, JSON.stringify(configs, null, 2), 'utf-8')
 }
 
 /**

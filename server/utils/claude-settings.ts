@@ -1,4 +1,4 @@
-import { readFile, writeFile, rename } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
@@ -17,9 +17,7 @@ export async function readClaudeSettings(): Promise<ClaudeSettings> {
 }
 
 async function writeClaudeSettings(settings: ClaudeSettings) {
-  const tmp = CLAUDE_SETTINGS_FILE + '.tmp'
-  await writeFile(tmp, JSON.stringify(settings, null, 2), 'utf-8')
-  await rename(tmp, CLAUDE_SETTINGS_FILE)
+  await writeFile(CLAUDE_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8')
 }
 
 const ENV_KEYS = [
