@@ -1,0 +1,14 @@
+services:
+  aimodelapi:
+    build: .
+    image: shellus/aimodelapi:latest
+    container_name: aimodelapi
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - /root/.aimodelapi:/root/.aimodelapi
+      - /root/.claude:/root/.claude
+    environment:
+      - NUXT_AUTH_KEY=${AUTH_KEY}
+      - NUXT_JWT_SECRET=${JWT_SECRET}

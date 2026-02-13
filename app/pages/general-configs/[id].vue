@@ -4,6 +4,7 @@ import type { GeneralConfig } from '@/types'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const { authFetch } = useAuth()
 
 const configId = route.params.id as string
 const isEditMode = computed(() => configId !== 'add')
@@ -20,7 +21,7 @@ onMounted(async () => {
   if (isEditMode.value) {
     loading.value = true
     try {
-      const config = await $fetch<GeneralConfig>(`/api/general-configs/${configId}`)
+      const config = await authFetch<GeneralConfig>(`/api/general-configs/${configId}`)
       form.name = config.name
       form.content = config.content
     } catch (error: any) {
@@ -47,7 +48,7 @@ async function handleSubmit() {
 
   saving.value = true
   try {
-    await $fetch('/api/general-configs', {
+    await authFetch('/api/general-configs', {
       method: 'POST',
       body: {
         id: isEditMode.value ? configId : undefined,

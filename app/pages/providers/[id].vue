@@ -4,6 +4,7 @@ import type { GeneralConfig } from '@/types'
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
+const { authFetch } = useAuth()
 const loading = ref(false)
 
 // 编辑模式：如果 id 不是 'add' 则为编辑模式
@@ -139,7 +140,7 @@ watch(jsonContent, (newValue) => {
 // 加载通用配置模板列表
 async function loadGeneralConfigs() {
   try {
-    generalConfigs.value = await $fetch<GeneralConfig[]>('/api/general-configs')
+    generalConfigs.value = await authFetch<GeneralConfig[]>('/api/general-configs')
   } catch (error) {
     // 静默处理，模板列表为空不影响核心功能
   }
@@ -151,7 +152,7 @@ onMounted(async () => {
 
   if (isEditMode.value) {
     try {
-      const provider = await $fetch<any>(`/api/providers/${providerId}`)
+      const provider = await authFetch<any>(`/api/providers/${providerId}`)
       // 映射基础字段
       form.name = provider.name
       form.type = provider.type
@@ -228,13 +229,13 @@ async function handleSubmit() {
     }
 
     if (isEditMode.value) {
-      await $fetch(`/api/providers/${providerId}`, {
+      await authFetch(`/api/providers/${providerId}`, {
         method: 'PUT',
         body: submitBody,
       })
       toast.add({ title: '更新成功', color: 'success' })
     } else {
-      await $fetch('/api/providers', {
+      await authFetch('/api/providers', {
         method: 'POST',
         body: submitBody,
       })

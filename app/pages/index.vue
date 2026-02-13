@@ -3,6 +3,7 @@ import type { Provider } from '@/types'
 import VueDraggable from 'vuedraggable'
 
 const router = useRouter()
+const { authFetch, logout } = useAuth()
 const providers = ref<Provider[]>([])
 const status = ref<Record<string, string | undefined>>({})
 const loading = ref(false)
@@ -58,11 +59,11 @@ function showFeatureNotReady(featureName: string) {
 }
 
 async function fetchProviders() {
-  providers.value = await $fetch<Provider[]>('/api/providers')
+  providers.value = await authFetch<Provider[]>('/api/providers')
 }
 
 async function fetchStatus() {
-  status.value = await $fetch<Record<string, string | undefined>>('/api/status')
+  status.value = await authFetch<Record<string, string | undefined>>('/api/status')
 }
 
 async function refresh() {
@@ -82,7 +83,7 @@ async function confirmDelete() {
   if (!providerToDelete.value) return
 
   try {
-    await $fetch(`/api/providers/${providerToDelete.value.id}`, { method: 'DELETE' })
+    await authFetch(`/api/providers/${providerToDelete.value.id}`, { method: 'DELETE' })
     toast.add({ title: '删除成功', color: 'success' })
     await refresh()
   } catch (error) {
@@ -96,7 +97,7 @@ async function confirmDelete() {
 async function handleSwitch(id: string) {
   loading.value = true
   try {
-    await $fetch(`/api/providers/${id}/switch`, { method: 'POST' })
+    await authFetch(`/api/providers/${id}/switch`, { method: 'POST' })
     toast.add({ title: '切换成功', color: 'success' })
     await refresh()
   } catch (error) {
@@ -108,7 +109,7 @@ async function handleSwitch(id: string) {
 
 async function handleDuplicate(id: string) {
   try {
-    const newProvider = await $fetch<Provider>(`/api/providers/${id}/duplicate`, { method: 'POST' })
+    const newProvider = await authFetch<Provider>(`/api/providers/${id}/duplicate`, { method: 'POST' })
     toast.add({ title: '复制成功', color: 'success' })
     router.push(`/providers/${newProvider.id}`)
   } catch (error) {
@@ -124,7 +125,7 @@ async function handleDragEnd() {
   }))
 
   try {
-    await $fetch('/api/providers/sort', {
+    await authFetch('/api/providers/sort', {
       method: 'PATCH',
       body: updates,
     })
@@ -161,6 +162,14 @@ onMounted(refresh)
                 :icon="colorMode.value === 'dark' ? 'i-heroicons-moon' : 'i-heroicons-sun'"
                 title="切换深色模式"
                 @click="toggleColorMode"
+              />
+              <UButton
+                color="gray"
+                variant="ghost"
+                size="sm"
+                icon="i-heroicons-arrow-right-on-rectangle"
+                title="退出登录"
+                @click="logout"
               />
             </div>
 

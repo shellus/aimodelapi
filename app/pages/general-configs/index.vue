@@ -2,7 +2,12 @@
 import type { GeneralConfig } from '@/types'
 
 const toast = useToast()
-const { data: configs, refresh } = await useFetch<GeneralConfig[]>('/api/general-configs')
+const { authFetch } = useAuth()
+const configs = ref<GeneralConfig[]>([])
+
+async function refresh() {
+  configs.value = await authFetch<GeneralConfig[]>('/api/general-configs')
+}
 
 function formatJson(content: string): string {
   try {
@@ -26,7 +31,7 @@ async function confirmDelete() {
 
   deletingId.value = configToDelete.value.id
   try {
-    await $fetch(`/api/general-configs/${configToDelete.value.id}`, { method: 'DELETE' })
+    await authFetch(`/api/general-configs/${configToDelete.value.id}`, { method: 'DELETE' })
     toast.add({ title: '配置已删除', color: 'success' })
     await refresh()
   } catch (error: any) {
@@ -37,6 +42,8 @@ async function confirmDelete() {
     configToDelete.value = null
   }
 }
+
+onMounted(refresh)
 </script>
 
 <template>
