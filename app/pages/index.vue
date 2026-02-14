@@ -153,7 +153,7 @@ onMounted(refresh)
                 size="sm"
                 icon="i-heroicons-cog-6-tooth"
                 title="设置"
-                @click="showFeatureNotReady('设置')"
+                to="/settings"
               />
               <UButton
                 color="gray"
