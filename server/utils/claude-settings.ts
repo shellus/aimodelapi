@@ -1,9 +1,27 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { homedir } from 'node:os'
+import { readSettings } from './settings'
 
-const CLAUDE_SETTINGS_FILE = join(homedir(), '.claude', 'settings.json')
+/**
+ * 解析路径，支持 ~ 符号
+ */
+function resolvePath(path: string): string {
+  if (path.startsWith('~/')) {
+    return join(homedir(), path.slice(2))
+  }
+  return path
+}
+
+/**
+ * 获取 Claude 设置文件路径
+ */
+async function getClaudeSettingsFile(): Promise<string> {
+  const settings = await readSettings()
+  const claudeDir = settings.claudeDir || '~/.claude'
+  return join(resolvePath(claudeDir), 'settings.json')
+}
 
 export interface ClaudeSettings {
   env?: Record<string, string>
@@ -11,8 +29,9 @@ export interface ClaudeSettings {
 }
 
 export async function readClaudeSettings(): Promise<ClaudeSettings> {
-  if (!existsSync(CLAUDE_SETTINGS_FILE)) return {}
-  const raw = await readFile(CLAUDE_SETTINGS_FILE, 'utf-8')
+  const file = await getClaudeSettingsFile()
+  if (!existsSync(file)) return {}
+  const raw = await readFile(file, 'utf-8')
   return JSON.parse(raw) as ClaudeSettings
 }
 
@@ -22,7 +41,12 @@ export async function readClaudeSettings(): Promise<ClaudeSettings> {
  * ⚠️ 注意：这会覆盖 settings.json 中的所有内容，包括用户手动添加的字段
  */
 export async function writeClaudeSettings(settings: ClaudeSettings) {
-  await writeFile(CLAUDE_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8')
+  const file = await getClaudeSettingsFile()
+  const dir = dirname(file)
+  if (!existsSync(dir)) {
+    await mkdir(dir, { recursive: true })
+  }
+  await writeFile(file, JSON.stringify(settings, null, 2), 'utf-8')
 }
 
 /**

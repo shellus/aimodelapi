@@ -7,10 +7,12 @@ const saving = ref(false)
 
 interface AppSettings {
   postSwitchHook?: string
+  claudeDir?: string
 }
 
 const form = reactive<AppSettings>({
-  postSwitchHook: ''
+  postSwitchHook: '',
+  claudeDir: ''
 })
 
 // 加载设置
@@ -19,6 +21,7 @@ async function loadSettings() {
   try {
     const data = await authFetch<AppSettings>('/api/settings')
     form.postSwitchHook = data.postSwitchHook || ''
+    form.claudeDir = data.claudeDir || ''
   } catch (error) {
     toast.add({ title: '加载设置失败', description: String(error), color: 'error' })
   } finally {
@@ -76,6 +79,27 @@ onMounted(() => {
       </div>
 
       <UForm v-else :state="form" class="space-y-8" @submit="handleSubmit">
+        <!-- Claude 目录配置 -->
+        <div class="space-y-6">
+          <div>
+            <h2 class="text-lg font-semibold text-default mb-1">Claude 目录</h2>
+            <p class="text-sm text-subtle">配置 Claude Code 的配置目录路径</p>
+          </div>
+
+          <UFormField
+            label="Claude 配置目录"
+            name="claudeDir"
+            help="Claude Code 的 settings.json 所在目录，支持 ~ 符号。留空则使用默认值 ~/.claude"
+          >
+            <UInput
+              v-model="form.claudeDir"
+              placeholder="~/.claude"
+              size="lg"
+              class="w-full font-mono"
+            />
+          </UFormField>
+        </div>
+
         <!-- 命令 Hook 配置 -->
         <div class="space-y-6">
           <div>

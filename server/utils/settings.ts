@@ -7,6 +7,7 @@ const SETTINGS_FILE = join(homedir(), '.aimodelapi', 'settings.json')
 
 export interface AppSettings {
   postSwitchHook?: string
+  claudeDir?: string
 }
 
 export async function readSettings(): Promise<AppSettings> {
