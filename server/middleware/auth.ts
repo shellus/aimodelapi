@@ -3,8 +3,8 @@ import jwt from 'jsonwebtoken'
 export default defineEventHandler((event) => {
   const path = event.path
 
-  // 跳过非 API 路由和登录接口
-  if (!path.startsWith('/api/') || path.startsWith('/api/auth/')) {
+  // 跳过非 API 路由、登录接口和 Nuxt 内部路由
+  if (!path.startsWith('/api/') || path.startsWith('/api/auth/') || path.startsWith('/api/_nuxt')) {
     return
   }
 
