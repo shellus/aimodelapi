@@ -286,10 +286,11 @@ export default defineNuxtConfig({
 
 架构详情见 [三层配置架构](./docs/features/general-configs.md#三层配置架构)。以下是开发时必须遵守的规则：
 
-- **ENV 保护策略**：`applyGeneralConfigContent` 在写入前备份当前 `env` 字段，合并后强制还原。任何修改合并逻辑的代码都必须保留此机制。
-- **合并顺序不可变**：先 `deepMerge(L2, L3)` 写入非 env 配置，再 `writeClaudeEnv(L1)` 写入环境变量。颠倒顺序会导致 env 被覆盖。
+- **全量写出策略**：`switchProvider` 每次切换时，通过三层合并计算出完整的 `settings.json` 内容后全量写出，不读取也不保留旧内容。
+- **合并顺序**：先 `deepMerge(L2, L3)` 得到配置骨架，再将 L1 环境变量写入 `env` 字段，最后一次性 `writeClaudeSettings(settings)` 写出。
 - **增量 diff 而非完整 JSON**：前端保存时必须通过 `extractDiff(base, edited)` 计算差异存为 `configOverrides`，禁止直接存储编辑器的完整 JSON。
 - **路径禁止硬编码**：数据文件路径常量统一定义在 `server/utils/providers.ts` 和 `server/utils/general-configs.ts` 中，API 路由层必须通过导入工具函数操作。
+- **禁止手动修改 settings.json**：`settings.json` 由系统全量管理，手动添加的字段会在下次切换 Provider 时被清空。所有配置必须通过 UI 界面管理。
 
 ### 交互规范
 

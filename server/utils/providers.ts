@@ -4,7 +4,7 @@ import { join, dirname } from 'node:path'
 import { homedir } from 'node:os'
 import { randomUUID } from 'node:crypto'
 import type { Provider, ProviderRequest } from '../../types'
-import { writeClaudeEnv, clearClaudeEnv, applyGeneralConfigContent, deepMerge } from './claude-settings'
+import { writeClaudeSettings, deepMerge, type ClaudeSettings } from './claude-settings'
 import { getGeneralConfig } from './general-configs'
 
 const PROVIDERS_DIR = join(homedir(), '.aimodelapi')
@@ -73,8 +73,8 @@ export async function deleteProvider(id: string): Promise<boolean> {
   const idx = providers.findIndex(p => p.id === id)
   if (idx === -1) return false
   if (providers[idx].isCurrent) {
-    // 如果删除的是当前激活的 Provider，清除 claude settings 中的 env
-    await clearClaudeEnv()
+    // 如果删除的是当前激活的 Provider，清空 settings.json
+    await writeClaudeSettings({})
   }
   providers.splice(idx, 1)
   await writeProviders(providers)
@@ -92,29 +92,26 @@ export async function switchProvider(id: string): Promise<Provider | null> {
 
   await writeProviders(providers)
 
-  // === 三层合并 ===
+  // === 三层合并，全量写出 settings.json ===
 
   // Layer 2: 通用配置模板
-  let merged: any = {}
+  let settings: ClaudeSettings = {}
   if (target.generalConfigId) {
     const config = await getGeneralConfig(target.generalConfigId)
     if (config) {
       try {
-        merged = JSON.parse(config.content)
+        settings = JSON.parse(config.content) as ClaudeSettings
       } catch (e) {
-        // 模板 JSON 解析失败，忽略
+        console.error(`[switchProvider] 通用配置 JSON 解析失败 (generalConfigId: ${target.generalConfigId}):`, e)
       }
+    } else {
+      console.warn(`[switchProvider] 通用配置不存在或已被删除 (generalConfigId: ${target.generalConfigId})`)
     }
   }
 
   // Layer 3: 用户覆写（增量 diff）
   if (target.configOverrides && Object.keys(target.configOverrides).length > 0) {
-    merged = deepMerge(merged, target.configOverrides)
-  }
-
-  // 写入合并后的配置（带 env 保护）
-  if (Object.keys(merged).length > 0) {
-    await applyGeneralConfigContent(JSON.stringify(merged))
+    settings = deepMerge(settings, target.configOverrides) as ClaudeSettings
   }
 
   // Layer 1: Provider 环境变量
@@ -127,7 +124,10 @@ export async function switchProvider(id: string): Promise<Provider | null> {
   if (target.modelConfig?.haikuModel) env.ANTHROPIC_DEFAULT_HAIKU_MODEL = target.modelConfig.haikuModel
   if (target.modelConfig?.sonnetModel) env.ANTHROPIC_DEFAULT_SONNET_MODEL = target.modelConfig.sonnetModel
   if (target.modelConfig?.opusModel) env.ANTHROPIC_DEFAULT_OPUS_MODEL = target.modelConfig.opusModel
-  await writeClaudeEnv(env)
+  settings.env = env
+
+  // 全量写出，不读取旧内容
+  await writeClaudeSettings(settings)
 
   return target
 }

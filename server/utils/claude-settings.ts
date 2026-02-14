@@ -5,7 +5,7 @@ import { homedir } from 'node:os'
 
 const CLAUDE_SETTINGS_FILE = join(homedir(), '.claude', 'settings.json')
 
-interface ClaudeSettings {
+export interface ClaudeSettings {
   env?: Record<string, string>
   [key: string]: unknown
 }
@@ -16,33 +16,13 @@ export async function readClaudeSettings(): Promise<ClaudeSettings> {
   return JSON.parse(raw) as ClaudeSettings
 }
 
-async function writeClaudeSettings(settings: ClaudeSettings) {
+/**
+ * 全量写出 settings.json，不读取旧内容
+ *
+ * ⚠️ 注意：这会覆盖 settings.json 中的所有内容，包括用户手动添加的字段
+ */
+export async function writeClaudeSettings(settings: ClaudeSettings) {
   await writeFile(CLAUDE_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8')
-}
-
-const ENV_KEYS = [
-  'ANTHROPIC_AUTH_TOKEN',
-  'ANTHROPIC_BASE_URL',
-  'ANTHROPIC_MODEL',
-  'ANTHROPIC_REASONING_MODEL',
-  'ANTHROPIC_DEFAULT_HAIKU_MODEL',
-  'ANTHROPIC_DEFAULT_SONNET_MODEL',
-  'ANTHROPIC_DEFAULT_OPUS_MODEL',
-] as const
-
-export async function writeClaudeEnv(env: Record<string, string>) {
-  const settings = await readClaudeSettings()
-  if (!settings.env) settings.env = {}
-
-  // 先清除旧的相关键
-  for (const key of ENV_KEYS) {
-    delete settings.env[key]
-  }
-
-  // 写入新值
-  Object.assign(settings.env, env)
-
-  await writeClaudeSettings(settings)
 }
 
 /**
@@ -61,54 +41,6 @@ export function deepMerge(target: any, source: any) {
     }
   }
   return result
-}
-
-/**
- * 应用通用配置内容（带环境变量保护）
- */
-export async function applyGeneralConfigContent(content: string) {
-  const current = await readClaudeSettings()
-
-  // 1. 强制保留当前的环境变量（由 Provider 管理器维护）
-  const oldEnv = current.env ? { ...current.env } : undefined
-
-  // 2. 解析新配置
-  let newConfigData: any
-  try {
-    newConfigData = JSON.parse(content)
-  } catch (e) {
-    throw new Error('无效的 JSON 配置内容')
-  }
-
-  // 3. 执行深合并
-  const mergedSettings = deepMerge(current, newConfigData)
-
-  // 4. 强制还原环境变量
-  if (oldEnv) {
-    mergedSettings.env = oldEnv
-  } else {
-    delete mergedSettings.env
-  }
-
-  // 5. 写入系统配置
-  await writeClaudeSettings(mergedSettings)
-  return mergedSettings
-}
-
-export async function clearClaudeEnv() {
-  const settings = await readClaudeSettings()
-  if (!settings.env) return
-
-  for (const key of ENV_KEYS) {
-    delete settings.env[key]
-  }
-
-  // 如果 env 为空对象，删除 env 键
-  if (Object.keys(settings.env).length === 0) {
-    delete settings.env
-  }
-
-  await writeClaudeSettings(settings)
 }
 
 export async function getClaudeEnvStatus(): Promise<Record<string, string | undefined>> {
