@@ -3,12 +3,31 @@ import type { Provider } from '@/types'
 import VueDraggable from 'vuedraggable'
 
 const router = useRouter()
+const route = useRoute()
 const { authFetch, logout } = useAuth()
 const providers = ref<Provider[]>([])
 const status = ref<Record<string, string | undefined>>({})
 const loading = ref(false)
-const activeTab = ref<'claude' | 'codex' | 'gemini' | 'opencode'>('claude')
+
+// 从 URL 查询参数读取初始 tab，默认为 claude
+const initialTab = (route.query.tab as string) || 'claude'
+const validTabs = ['claude', 'codex', 'gemini', 'opencode']
+const activeTab = ref<'claude' | 'codex' | 'gemini' | 'opencode'>(
+  validTabs.includes(initialTab) ? initialTab as any : 'claude'
+)
 const hoveredId = ref<string | null>(null)
+
+// 监听 activeTab 变化，同步到 URL
+watch(activeTab, (newTab) => {
+  router.replace({ query: { tab: newTab } })
+})
+
+// 监听 URL 变化，同步到 activeTab
+watch(() => route.query.tab, (newTab) => {
+  if (newTab && validTabs.includes(newTab as string)) {
+    activeTab.value = newTab as any
+  }
+})
 
 // 深色模式切换
 const colorMode = useColorMode()
@@ -44,6 +63,33 @@ const typeIcons: Record<string, string> = {
   opencode: '📱',
 }
 
+// 类型对应的名称映射
+const typeNames: Record<string, string> = {
+  claude: 'Claude',
+  codex: 'Codex',
+  gemini: 'Gemini',
+  opencode: 'OpenCode',
+}
+
+// 根据当前标签页生成添加按钮配置
+const addButtonConfig = computed(() => {
+  const type = activeTab.value
+  const icon = typeIcons[type]
+  const name = typeNames[type]
+
+  return {
+    label: `${icon} 添加 ${name} Provider`,
+    to: ['claude', 'codex'].includes(type) ? `/providers/${type}/add` : undefined,
+    disabled: !['claude', 'codex'].includes(type),
+  }
+})
+
+// 根据当前标签页生成通用配置链接
+const generalConfigLink = computed(() => {
+  const type = activeTab.value
+  return ['claude', 'codex'].includes(type) ? `/general-configs/${type}` : '/general-configs/claude'
+})
+
 // 切换深色模式
 function toggleColorMode() {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
@@ -71,7 +117,7 @@ async function refresh() {
 }
 
 function startEdit(p: Provider) {
-  router.push(`/providers/${p.id}`)
+  router.push(`/providers/${p.type}/${p.id}`)
 }
 
 function openDeleteModal(id: string, name: string) {
@@ -200,7 +246,7 @@ onMounted(refresh)
                 variant="ghost"
                 size="sm"
                 icon="i-heroicons-adjustments-horizontal"
-                to="/general-configs"
+                :to="generalConfigLink"
                 title="通用配置模板"
               />
               <UButton
@@ -230,9 +276,12 @@ onMounted(refresh)
               <UButton
                 color="primary"
                 size="md"
-                @click="router.push('/providers/add')"
+                icon="i-heroicons-plus"
+                :to="addButtonConfig.to"
+                :disabled="addButtonConfig.disabled"
+                @click="addButtonConfig.disabled ? showFeatureNotReady(`${typeNames[activeTab]} Provider`) : undefined"
               >
-                + 添加
+                添加
               </UButton>
             </div>
           </div>

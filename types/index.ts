@@ -16,8 +16,11 @@ export interface Provider {
   baseUrl: string
   websiteUrl?: string
 
-  // 模型配置
+  // 模型配置（Claude 专用）
   modelConfig?: ClaudeModelConfig
+
+  // Codex 配置（Codex 专用）
+  codexConfig?: CodexConfig
 
   // 元数据
   notes?: string                 // 备注信息
@@ -27,7 +30,7 @@ export interface Provider {
   // 状态信息
   isCurrent: boolean             // 是否为当前激活的 Provider
   generalConfigId?: string       // 关联的通用配置模板 ID
-  configOverrides?: Record<string, any>  // Layer 3: 用户手动覆写（增量 diff）
+  configOverrides?: Record<string, any>  // Layer 4: 用户手动覆写（增量 diff）
   inFailoverQueue?: boolean      // 是否加入故障转移队列
 
   // 时间戳
@@ -50,6 +53,15 @@ export interface ClaudeModelConfig {
 }
 
 /**
+ * Codex 配置
+ * config.toml 是最终配置，包含所有设置（model, base_url, reasoning_effort 等）
+ */
+export interface CodexConfig {
+  auth: Record<string, any>      // auth.json 内容
+  config: string                  // config.toml 内容（TOML 字符串）- 这是最终配置
+}
+
+/**
  * Provider 扩展元数据
  */
 export interface ProviderMeta {
@@ -62,6 +74,7 @@ export interface ProviderMeta {
 export interface GeneralConfig {
   id: string
   name: string
+  type: 'claude' | 'codex'  // 配置类型
   content: string // JSON 字符串
   createdAt: number
 }
@@ -106,5 +119,6 @@ export interface ProviderRequest {
   generalConfigId?: string
   configOverrides?: Record<string, any>
   modelConfig?: ClaudeModelConfig
+  codexConfig?: CodexConfig
   meta?: ProviderMeta
 }

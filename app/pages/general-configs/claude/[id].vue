@@ -13,6 +13,7 @@ const saving = ref(false)
 
 const form = reactive({
   name: '',
+  type: 'claude' as const,
   content: '{\n  "theme": "dark",\n  "includeCoAuthoredBy": false\n}'
 })
 
@@ -30,7 +31,7 @@ onMounted(async () => {
         description: error.data?.statusMessage || error.message,
         color: 'error'
       })
-      router.push('/general-configs')
+      router.push('/general-configs/claude')
     } finally {
       loading.value = false
     }
@@ -48,7 +49,7 @@ async function handleSubmit() {
 
   saving.value = true
   try {
-    await authFetch('/api/general-configs', {
+    await authFetch('/api/general-configs/claude', {
       method: 'POST',
       body: {
         id: isEditMode.value ? configId : undefined,
@@ -57,7 +58,7 @@ async function handleSubmit() {
       }
     })
     toast.add({ title: isEditMode.value ? '已更新配置' : '已创建配置', color: 'success' })
-    router.push('/general-configs')
+    router.push('/general-configs/claude')
   } catch (error: any) {
     toast.add({ title: '保存失败', description: error.data?.statusMessage || error.message, color: 'error' })
   } finally {
@@ -78,7 +79,7 @@ async function handleSubmit() {
             @click="router.back()"
           />
           <h1 class="text-xl font-bold text-default">
-            {{ isEditMode ? '编辑模板' : '新建配置模板' }}
+            {{ isEditMode ? '编辑 Claude 配置模板' : '新建 Claude 配置模板' }}
           </h1>
         </div>
         <div class="flex gap-3">

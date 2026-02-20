@@ -1,124 +1,89 @@
 # 功能介绍：通用配置管理 (General Configuration)
 
-通用配置功能允许用户维护多套 `~/.claude/settings.json` 的配置模板，并通过关联到 Provider 实现切换时自动应用。
+通用配置功能允许用户维护多套模板，并通过关联到 Provider 实现切换时自动应用。
 
 ## 核心价值
 
-在 Claude Code 中，`settings.json` 同时存储了：
-1. **环境变量**：由 Provider 管理器维护（如 `ANTHROPIC_AUTH_TOKEN`）。
-2. **通用设置**：如权限控制（permissions）、插件启用状态（enabledPlugins）、主题（theme）、状态栏（statusLine）等。
+1. 切换 Provider 时自动应用模板，不需要手工改配置文件。
+2. 上游配置变化（基础字段、模板）后，用户的最终编辑仍可保留。
+3. 对 Claude 与 Codex 使用统一的 `configOverrides` 思路，但按各自文件格式落地。
 
-**通用配置功能解决了"在切换高级设置时不想破坏当前 Provider 认证信息"的问题。**
+## 分层配置架构
 
-## 三层配置架构
-
-Provider 最终写入 `settings.json` 的内容由 3 层叠加而成，切换时实时合并：
+### Claude（写入 `~/.claude/settings.json`）
 
 ```
-Layer 1: Provider 基础字段（自动转换为 env）
-├── apiKey  → ANTHROPIC_AUTH_TOKEN
-├── baseUrl → ANTHROPIC_BASE_URL
-└── model   → ANTHROPIC_MODEL
+Layer 1: Provider 基础字段（env）
+Layer 2: 通用配置模板（generalConfig.content）
+Layer 3: Provider 自身配置（当前预留，尚未启用独立字段）
+Layer 4: configOverrides（增量 diff）
 
-Layer 2: 关联的通用配置模板（generalConfigId → content）
-├── permissions, plugins, theme, ...
-│   通过 deepMerge 合并
-
-Layer 3: 用户手动覆写（configOverrides，增量 diff）
-├── 用户在"最终配置"编辑器中做的个性化修改
-│   存储的是相对于 merge(L1, L2) 的差异部分
+final = merge(L2, L3, L4)
+final.env = L1
 ```
 
-### 合并流程（切换 Provider 时实时执行）
+说明：`env` 由 Layer 1 最终写入，避免模板或覆写误改认证与路由。
+
+### Codex（写入 `~/.codex/auth.json` 与 `~/.codex/config.toml`）
 
 ```
-1. base = deepMerge(L1_env, L2_template)
-2. final = deepMerge(base, L3_configOverrides)
-3. 写入 settings.json = final
+Layer 1: Provider 基础字段（apiKey/baseUrl）
+Layer 2: 通用配置模板（generalConfig.content: { auth, config })
+Layer 3: Provider 自身配置（codexConfig: { auth, config })
+Layer 4: configOverrides（最终编辑器差异）
+
+final = merge(L1, L2, L3, L4)
 ```
 
-### 增量 diff 计算（保存 Provider 时执行）
+当前 `configOverrides` 在 Codex 下使用两段结构：
+- `codexAuth`: 对最终 `auth.json` 的差异对象。
+- `codexConfig`: 对最终 `config.toml` 的覆盖字符串。
 
-```
-1. base = deepMerge(L1_env, L2_template)
-2. edited = 用户在编辑器中修改后的 JSON
-3. configOverrides = extractDiff(base, edited)
-   → 只保留用户新增/修改的键，删除与 base 相同的键
-```
+## 增量 diff 规则
 
-### 为什么存增量 diff 而不是完整 JSON
+`configOverrides` 只存“编辑器最终内容”相对基础合并结果的差异。
 
-- **修改 Provider 的 key/url（Layer 1）**→ 重新合并 → 用户覆写不丢失
-- **更换/更新关联模板（Layer 2）**→ 重新合并 → 用户覆写不丢失
-- **Layer 3 始终是"用户意图"的精确表达**，不会被上游变更污染
+- Claude: 相对 `merge(L1_env, L2_template, L3_provider)` 提取 diff（当前 L3 为空，等价于 L1+L2）。
+- Codex: 相对 `merge(L1, L2, L3)` 提取 diff（最终编辑器只写 `configOverrides`，不反写 L2/L3）。
 
-> [!note] L3 设计约束：只支持增和改，不支持删除
-> `configOverrides` 只记录用户新增或修改的键值，不记录用户删除的键。
-> 如需移除模板中的某个字段，应修改模板本身或更换模板，而非在 L3 中操作。
-> 这确保 `configOverrides` 中每个 key 都是用户**明确想要的值**，语义清晰，不存在隐式操作。
-
-### Provider 数据结构
+## Provider 关键字段
 
 ```typescript
 interface Provider {
   id: string
   name: string
-  type: ProviderAppType              // 'claude' | 'codex' | 'gemini' | 'opencode'
+  type: 'claude' | 'codex' | 'gemini' | 'opencode'
 
-  // Layer 1: 基础字段（切换时转换为 env 写入 settings.json）
-  apiKey: string                     // → ANTHROPIC_AUTH_TOKEN
-  baseUrl: string                    // → ANTHROPIC_BASE_URL
-  modelConfig?: ClaudeModelConfig    // model → ANTHROPIC_MODEL
+  // Layer 1
+  apiKey: string
+  baseUrl: string
 
-  // Layer 2 & 3: 配置合并
-  generalConfigId?: string           // 关联的通用配置模板 ID
-  configOverrides?: Record<string, any>  // 用户手动覆写（增量 diff）
+  // Claude 模型映射
+  modelConfig?: ClaudeModelConfig
 
-  // 状态与元数据
-  isCurrent: boolean                 // 是否为当前激活的 Provider
-  notes?: string
-  websiteUrl?: string
-  createdAt: number
-  sortIndex?: number                 // 拖拽排序索引
-}
+  // Codex Provider 自身配置（Layer 3）
+  codexConfig?: {
+    auth: Record<string, any>
+    config: string
+  }
 
-interface GeneralConfig {
-  id: string
-  name: string
-  content: string                    // JSON 字符串（模板内容）
-  createdAt: number
+  // 通用模板
+  generalConfigId?: string
+
+  // Layer 4 最终编辑差异（Claude: 通用对象；Codex: codexAuth/codexConfig）
+  configOverrides?: Record<string, any>
 }
 ```
 
 ## 使用指南
 
-### 1. 进入管理页面
-在首页工具栏右侧，点击 **"调节（Adjustments）"** 图标即可进入通用配置模板列表。
-
-### 2. 创建模板
-- 点击"添加模板"。
-- **名称**：起一个易于识别的名字，如"全能开发模式"或"极简安全模式"。
-- **配置内容**：输入合法的 JSON。
-    - 例如，开启所有权限的配置：
-      ```json
-      {
-        "permissions": {
-          "allow": ["Bash", "Edit", "Write", "Read", "Glob", "Grep", "Skill"]
-        }
-      }
-      ```
-
-### 3. 关联到 Provider
-在 Provider 的编辑页面中，选择关联的通用配置模板（`generalConfigId`）。可选择"无"或点击清除按钮取消关联。
-
-### 4. 编辑最终配置
-在 Provider 编辑页面中，"最终配置预览"编辑器展示 `deepMerge(L1, L2, L3)` 的结果。用户可直接编辑，保存时系统自动提取增量 diff 存为 `configOverrides`。
-
-### 5. 未关联模板的 Provider
-如果 Provider 没有关联模板且没有 configOverrides，切换时只写入 env 变量（Key、URL、Model），`settings.json` 中的其他设置保持不变。
+1. 创建模板并保存为通用配置。
+2. 在 Provider 编辑页关联模板（`generalConfigId`）。
+3. 在最终配置编辑区调整内容并保存。
+4. 系统只记录差异到 `configOverrides`，切换时按分层实时合并。
 
 ## 注意事项
-- 模板内容必须是有效的 JSON 格式。
-- 模板通过深合并应用，同名键会被覆盖，但 `env` 字段始终受保护。
-- 模板只通过 Provider 的 `generalConfigId` 关联生效，不支持独立应用。
-- `configOverrides` 存储增量 diff，允许上游（L1/L2）变更时保留用户定制。
+
+- 模板 `content` 必须是合法 JSON。
+- Codex 模板 `content` 推荐结构：`{ "auth": {}, "config": "...toml..." }`。
+- `configOverrides` 设计为“增量覆盖”，上游层变更后会重新参与合并。

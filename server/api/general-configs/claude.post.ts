@@ -4,7 +4,6 @@ import { saveGeneralConfig } from '../../utils/general-configs'
 const configSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, '名称不能为空'),
-  type: z.enum(['claude', 'codex'], { errorMap: () => ({ message: '类型必须是 claude 或 codex' }) }),
   content: z.string().min(1, '配置内容不能为空').refine((val) => {
     try {
       JSON.parse(val)
@@ -27,5 +26,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return await saveGeneralConfig(result.data)
+  // 强制设置 type 为 claude
+  return await saveGeneralConfig({
+    ...result.data,
+    type: 'claude'
+  })
 })

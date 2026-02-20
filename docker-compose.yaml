@@ -9,6 +9,7 @@ services:
     volumes:
       - /root/.aimodelapi:/root/.aimodelapi
       - /root/.claude:/root/.claude
+      - /root/.codex:/root/.codex
     environment:
       - NUXT_AUTH_KEY=${AUTH_KEY}
       - NUXT_JWT_SECRET=${JWT_SECRET}

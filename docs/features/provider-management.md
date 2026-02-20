@@ -19,7 +19,7 @@
 - **Haiku/Sonnet/Opus**: 分级别指定默认映射模型。
 
 ### 3. 配置一键切换
-点击"启用"后，系统通过[三层配置合并架构](./general-configs.md#三层配置架构)将 Provider 的环境变量、关联模板和用户覆写合并写入 `~/.claude/settings.json`。
+点击"启用"后，系统通过[分层配置架构](./general-configs.md#分层配置架构)按统一四层模型合并配置（Claude 的 Layer 3 当前预留），并写入目标文件（Claude: `~/.claude/settings.json`；Codex: `~/.codex/auth.json` 与 `~/.codex/config.toml`）。
 
 ### 4. 通用配置关联
 每个 Provider 可关联一个[通用配置模板](./general-configs.md)，切换时自动应用权限、插件等高级设置。用户还可在编辑页的"最终配置预览"中做个性化修改，系统会以增量 diff 形式保留。

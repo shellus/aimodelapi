@@ -6,7 +6,7 @@ const { authFetch } = useAuth()
 const configs = ref<GeneralConfig[]>([])
 
 async function refresh() {
-  configs.value = await authFetch<GeneralConfig[]>('/api/general-configs')
+  configs.value = await authFetch<GeneralConfig[]>('/api/general-configs?type=codex')
 }
 
 function formatJson(content: string): string {
@@ -58,10 +58,10 @@ onMounted(refresh)
             color="gray"
             to="/"
           />
-          <h1 class="text-xl font-bold text-default">通用配置模板</h1>
+          <h1 class="text-xl font-bold text-default">⚛️ Codex 通用配置模板</h1>
         </div>
         <UButton
-          to="/general-configs/add"
+          to="/general-configs/codex/add"
           icon="i-heroicons-plus"
           color="primary"
         >
@@ -101,7 +101,7 @@ onMounted(refresh)
                 variant="ghost"
                 color="gray"
                 size="sm"
-                :to="`/general-configs/${config.id}`"
+                :to="`/general-configs/codex/${config.id}`"
               />
               <UButton
                 icon="i-heroicons-trash"
@@ -118,9 +118,9 @@ onMounted(refresh)
       <!-- 空状态 -->
       <div v-else class="flex h-64 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800">
         <UIcon name="i-heroicons-document-text" class="mb-4 h-12 w-12 text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400">暂无通用配置模板</p>
+        <p class="text-gray-500 dark:text-gray-400">暂无 Codex 通用配置模板</p>
         <UButton
-          to="/general-configs/add"
+          to="/general-configs/codex/add"
           variant="link"
           class="mt-2"
         >

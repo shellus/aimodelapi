@@ -292,6 +292,43 @@ export default defineNuxtConfig({
 - **路径禁止硬编码**：数据文件路径常量统一定义在 `server/utils/providers.ts` 和 `server/utils/general-configs.ts` 中，API 路由层必须通过导入工具函数操作。
 - **禁止手动修改 settings.json**：`settings.json` 由系统全量管理，手动添加的字段会在下次切换 Provider 时被清空。所有配置必须通过 UI 界面管理。
 
+#### 5. Codex Provider 表单配置层级规范
+
+Codex Provider 表单页面的配置层级和双向同步逻辑：
+
+**配置层级定义**：
+- **L2（Provider 自身配置）**：
+  - 基础表单：名称、备注、API Key、Base URL
+  - 模型配置：模型名称（Model Name）、推理强度（Reasoning Effort）
+  - 这些输入形成 `codexConfig = { auth: {...}, config: "..." }`
+
+- **L1（可选的通用配置模板）**：
+  - 用户可选择关联一个通用配置模板（`generalConfigId`）
+  - 如果不选，则没有 L1 层
+
+- **L3（最终配置）**：
+  - L3 = L1（如果有）+ L2
+  - **关键**：L2 必须覆盖 L1 的同名字段（L2 优先）
+
+**双向同步规则**：
+
+1. **正向同步（表单 → 编辑框）**：
+   - 用户在表单中输入 API Key、Base URL、模型名称、推理强度
+   - 自动更新 `auth.json` 和 `config.toml` 编辑框内容
+   - 合并时保护 L2，确保页面输入的值不会被模板覆盖
+
+2. **反向同步（编辑框 → 表单）**：
+   - 用户直接编辑 `auth.json` 或 `config.toml` 编辑框
+   - 从 `config.toml` 中提取模型名称、推理强度等字段
+   - 反向更新表单字段（模型名称、推理强度输入框）
+   - 只同步 L2 的字段，不影响 L1
+
+**实现要点**：
+- `auth.json` 和 `config.toml` 是两个独立的编辑框，不是一个 JSON 预览
+- 使用 `watch` 监听编辑框变化，提取字段值更新表单
+- 使用 `watch` 监听表单字段变化，更新编辑框内容
+- 使用 `isUpdatingFromEditor` 标志避免循环更新
+
 ### 交互规范
 
 #### 加载状态

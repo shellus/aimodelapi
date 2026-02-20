@@ -16,6 +16,10 @@ const providerSchema = z.object({
     sonnetModel: z.string().optional(),
     opusModel: z.string().optional(),
   }).optional(),
+  codexConfig: z.object({
+    auth: z.record(z.string(), z.any()).optional(),
+    config: z.string().optional(),
+  }).optional(),
 })
 
 export default defineEventHandler(async (event) => {

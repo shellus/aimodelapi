@@ -52,6 +52,7 @@ export async function saveGeneralConfig(data: Omit<GeneralConfig, 'id' | 'create
       configs[idx] = {
         ...configs[idx],
         name: data.name,
+        type: data.type,
         content: data.content
       }
       await writeGeneralConfigs(configs)
@@ -63,6 +64,7 @@ export async function saveGeneralConfig(data: Omit<GeneralConfig, 'id' | 'create
   const newConfig: GeneralConfig = {
     id: randomUUID().slice(0, 8),
     name: data.name,
+    type: data.type,
     content: data.content,
     createdAt: Date.now()
   }
