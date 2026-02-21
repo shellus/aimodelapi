@@ -27,7 +27,7 @@ const localValue = computed({
       <UFormField label="主模型" name="modelConfig.model">
         <UInput
           v-model="localValue.model"
-          placeholder="claude-3-7-sonnet-20250219"
+          placeholder="claude-sonnet-4-6"
           size="lg"
           class="w-full"
         />
@@ -36,7 +36,7 @@ const localValue = computed({
       <UFormField label="推理模型 (Thinking)" name="modelConfig.thinkingModel">
         <UInput
           v-model="localValue.thinkingModel"
-          placeholder="claude-3-7-sonnet-20250219"
+          placeholder="claude-opus-4-6"
           size="lg"
           class="w-full"
         />
@@ -48,7 +48,7 @@ const localValue = computed({
       <UFormField label="Haiku 默认模型" name="modelConfig.haikuModel">
         <UInput
           v-model="localValue.haikuModel"
-          placeholder="claude-3-5-haiku-20241022"
+          placeholder="claude-haiku-4-5-20251001"
           size="lg"
           class="w-full"
         />
@@ -57,7 +57,7 @@ const localValue = computed({
       <UFormField label="Sonnet 默认模型" name="modelConfig.sonnetModel">
         <UInput
           v-model="localValue.sonnetModel"
-          placeholder="claude-3-5-sonnet-20241022"
+          placeholder="claude-sonnet-4-6"
           size="lg"
           class="w-full"
         />
@@ -68,7 +68,7 @@ const localValue = computed({
     <UFormField label="Opus 默认模型" name="modelConfig.opusModel">
       <UInput
         v-model="localValue.opusModel"
-        placeholder="claude-3-opus-20240229"
+        placeholder="claude-opus-4-6"
         size="lg"
         class="w-full"
       />
