@@ -22,6 +22,11 @@ Claude Code Provider 切换工具。本地运行的 Web 应用，通过浏览器
 - Nuxt UI v4（组件库）
 - Tailwind CSS 4
 
+## 认证配置
+
+- `AUTH_KEY`：登录口令。留空则关闭鉴权。
+- `JWT_SECRET`：JWT 签名密钥。**当设置 `AUTH_KEY` 启用鉴权时必须同时设置**，建议使用高强度随机字符串（至少 32 位）。
+
 ## 使用方法
 
 ```bash

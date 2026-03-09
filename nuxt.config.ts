@@ -26,6 +26,6 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     authKey: process.env.AUTH_KEY || '',
-    jwtSecret: process.env.JWT_SECRET || 'aimodelapi-default-secret',
+    jwtSecret: process.env.JWT_SECRET || '',
   },
 })
