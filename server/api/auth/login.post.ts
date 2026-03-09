@@ -8,11 +8,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: '未配置 AUTH_KEY' })
   }
 
+  if (!config.jwtSecret) {
+    throw createError({ statusCode: 500, message: '未配置 JWT_SECRET' })
+  }
+
   if (body.key !== config.authKey) {
     throw createError({ statusCode: 401, message: '密钥错误' })
   }
 
-  const token = jwt.sign({ auth: true }, config.jwtSecret || 'aimodelapi-default-secret')
+  const token = jwt.sign({ auth: true }, config.jwtSecret)
 
   return { success: true, token }
 })

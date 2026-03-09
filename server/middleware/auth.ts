@@ -15,6 +15,10 @@ export default defineEventHandler((event) => {
     return
   }
 
+  if (!config.jwtSecret) {
+    throw createError({ statusCode: 500, message: '服务端未配置 JWT_SECRET' })
+  }
+
   const authHeader = getHeader(event, 'authorization')
   const token = authHeader?.replace('Bearer ', '')
 
@@ -23,7 +27,7 @@ export default defineEventHandler((event) => {
   }
 
   try {
-    jwt.verify(token, config.jwtSecret || 'aimodelapi-default-secret')
+    jwt.verify(token, config.jwtSecret)
   } catch {
     throw createError({ statusCode: 401, message: 'Token 无效' })
   }
